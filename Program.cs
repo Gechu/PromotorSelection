@@ -23,8 +23,22 @@ namespace PromotorSelection
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
-            // Razor Pages
-            builder.Services.AddRazorPages();
+            // Blokowanie dostêpu dla u¿ytkowników
+            builder.Services.AddRazorPages(options =>
+            {
+                // Pozwól na dostêp anonimowy do strony g³ównej
+                options.Conventions.AllowAnonymousToPage("/Index");
+
+                // Pozwól na dostêp anonimowy do ca³ego Identity (logowanie, rejestracja)
+                options.Conventions.AllowAnonymousToFolder("/Identity");
+            });
+
+            builder.Services.ConfigureApplicationCookie(options =>
+            {
+                options.LoginPath = "/Identity/Account/Login";
+                options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+            });
+
 
             var app = builder.Build();
 
