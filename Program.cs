@@ -1,21 +1,39 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using PromotorSelection.Data;
+
 namespace PromotorSelection
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // Po³¹czenie do SQLite
+            var connectionString = builder.Configuration.GetConnectionString("csConnection")
+                ?? throw new InvalidOperationException("Connection string 'csConnection' not found.");
+
+            // Rejestracja DbContext
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlite(connectionString));
+
+            // Identity z rolami
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
+
+            // Razor Pages
             builder.Services.AddRazorPages();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // Tworzenie ról przy starcie aplikacji
+            await CreateRolesAsync(app);
+
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
@@ -24,11 +42,28 @@ namespace PromotorSelection
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapRazorPages();
 
             app.Run();
+        }
+
+        private static async Task CreateRolesAsync(WebApplication app)
+        {
+            using var scope = app.Services.CreateScope();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+            string[] roles = { "Student", "Promotor", "Admin" };
+
+            foreach (var role in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(role));
+                }
+            }
         }
     }
 }
