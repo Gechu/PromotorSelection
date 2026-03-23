@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.Identity;
+锘縰sing Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Data;
 
@@ -10,7 +11,7 @@ namespace PromotorSelection
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Po彻czenie do SQLite
+            // Po艂膮czenie do SQLite
             var connectionString = builder.Configuration.GetConnectionString("csConnection")
                 ?? throw new InvalidOperationException("Connection string 'csConnection' not found.");
 
@@ -23,26 +24,35 @@ namespace PromotorSelection
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
-            // Blokowanie dost阷u dla u縴tkownik體
+            // Blokowanie dost臋pu dla u偶ytkownik贸w
             builder.Services.AddRazorPages(options =>
             {
-                // Pozw髄 na dost阷 anonimowy do strony g丑wnej
+                // Pozw贸l na dost臋p anonimowy do strony g艂贸wnej
                 options.Conventions.AllowAnonymousToPage("/Index");
 
-                // Pozw髄 na dost阷 anonimowy do ca砮go Identity (logowanie, rejestracja)
+                // Pozw贸l na dost臋p anonimowy do ca艂ego Identity (logowanie, rejestracja)
                 options.Conventions.AllowAnonymousToFolder("/Identity");
             });
 
+
             builder.Services.ConfigureApplicationCookie(options =>
             {
+                options.SlidingExpiration = false;
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+                options.Cookie.IsEssential = true;
+                options.Cookie.HttpOnly = true;
                 options.LoginPath = "/Identity/Account/Login";
                 options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+
+                // Wymusza wylogowanie po restarcie aplikacji
+                options.Cookie.Name = "AuthCookie_" + Guid.NewGuid().ToString();
             });
+
 
 
             var app = builder.Build();
 
-            // Tworzenie r髄 przy starcie aplikacji
+            // Tworzenie r贸l przy starcie aplikacji
             await CreateRolesAsync(app);
 
             if (!app.Environment.IsDevelopment())
