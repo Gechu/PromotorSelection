@@ -1,12 +1,9 @@
 ﻿@page
-@model Student.IndexModel
+@model PromotorSelection.Pages.Student.IndexModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Panel studenta";
+}
 
 <h1>Panel studenta</h1>
-
 <p>Witaj w systemie wyboru promotorów.</p>
-
-<ul>
-    <li><a href="/Student/ChoosePromoter">Wybierz promotora</a></li>
-    <li><a href="/Student/Team">Zespół projektowy</a></li>
-    <li><a href="/Student/Grades">Moja średnia</a></li>
-</ul>

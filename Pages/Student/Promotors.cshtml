@@ -1,7 +1,12 @@
 ﻿@page
-@model Student.ChoosePromoterModel
+@model PromotorSelection.Pages.Student.PromotorsModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Lista promotorów";
+}
 
-<h2>Wybór promotora</h2>
+<h1>Lista promotorów</h1>
+<p>Tu student zobaczy listę promotorów i liczbę wolnych miejsc.</p>
 
 <form method="post">
     <div>

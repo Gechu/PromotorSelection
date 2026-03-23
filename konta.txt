@@ -1,0 +1,28 @@
+Admin:
+grzegorz@cos.pl
+ZAQ12wsx!
+b8a00fff-26b3-42cd-8d15-1acb4306091c
+
+Student:
+student@cos.pl
+ZAQ12wsx!
+24781bdd-1496-4903-b7e3-c57330272fdb
+
+Promotor:
+promotor@cos.pl
+ZAQ12wsx!
+b6eefa77-79ad-4029-8a4e-a79ce3ebe1d4
+
+
+
+
+ID roli:
+Admin:		aa32189c-42f1-4a61-8d6a-46796ad326ad
+Promotor:	fea73c84-eb09-4773-ba56-3705c44d9bd8
+Student: 	c2913734-c4ef-4666-bc4f-771e97d1f7bb
+
+
+
+Dodawanie roli użytkownikom:
+INSERT INTO AspNetUserRoles (UserId, RoleId)
+VALUES ('ID_UZYTKOWNIKA', 'ID_ROLI');
