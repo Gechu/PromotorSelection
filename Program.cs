@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
-using PromotorSelection.Data;
 
 namespace PromotorSelection
 {
@@ -11,18 +10,11 @@ namespace PromotorSelection
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Połączenie do SQLite
-            var connectionString = builder.Configuration.GetConnectionString("csConnection")
-                ?? throw new InvalidOperationException("Connection string 'csConnection' not found.");
-
-            // Rejestracja DbContext
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlite(connectionString));
-
-            // Identity z rolami
-            builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-                .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddDefaultTokenProviders();
+            //adres backendu, rejestracja httpClient
+            builder.Services.AddHttpClient("BackendAPI", client =>
+            {
+                client.BaseAddress = new Uri("https://localhost:7001/");  //prawdopodobnie, jeszcze nie wiem jaki dokladnie adres
+            });
 
             // Blokowanie dostępu dla użytkowników
             builder.Services.AddRazorPages(options =>
@@ -30,30 +22,20 @@ namespace PromotorSelection
                 // Pozwól na dostęp anonimowy do strony głównej
                 options.Conventions.AllowAnonymousToPage("/Index");
 
-                // Pozwól na dostęp anonimowy do całego Identity (logowanie, rejestracja)
-                options.Conventions.AllowAnonymousToFolder("/Identity");
             });
 
-
-            builder.Services.ConfigureApplicationCookie(options =>
-            {
-                options.SlidingExpiration = false;
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-                options.Cookie.IsEssential = true;
-                options.Cookie.HttpOnly = true;
-                options.LoginPath = "/Identity/Account/Login";
-                options.AccessDeniedPath = "/Identity/Account/AccessDenied";
-
-                // Wymusza wylogowanie po restarcie aplikacji
-                options.Cookie.Name = "AuthCookie_" + Guid.NewGuid().ToString();
-            });
-
+            //ciasteczka przez api beda
+            builder.Services.AddAuthentication("MyCookieAuth").AddCookie("MyCookieAuth", options =>
+             {
+                 options.Cookie.Name = "MyCookieAuth";
+                 options.LoginPath = "/Account/Login";
+                 options.AccessDeniedPath = "/Account/AccessDenied";
+             });
 
 
             var app = builder.Build();
 
-            // Tworzenie ról przy starcie aplikacji
-            await CreateRolesAsync(app);
+
 
             if (!app.Environment.IsDevelopment())
             {
@@ -72,22 +54,6 @@ namespace PromotorSelection
             app.MapRazorPages();
 
             app.Run();
-        }
-
-        private static async Task CreateRolesAsync(WebApplication app)
-        {
-            using var scope = app.Services.CreateScope();
-            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-
-            string[] roles = { "Student", "Promotor", "Admin" };
-
-            foreach (var role in roles)
-            {
-                if (!await roleManager.RoleExistsAsync(role))
-                {
-                    await roleManager.CreateAsync(new IdentityRole(role));
-                }
-            }
         }
     }
 }

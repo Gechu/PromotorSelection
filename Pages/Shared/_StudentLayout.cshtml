@@ -1,8 +1,4 @@
-﻿@using Microsoft.AspNetCore.Identity
-@inject SignInManager<IdentityUser> SignInManager
-@inject UserManager<IdentityUser> UserManager
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="utf-8" />
@@ -44,7 +40,7 @@
 
                     </ul>
 
-                    <form asp-area="Identity" asp-page="/Account/Logout" method="post" class="d-flex">
+                    <form asp-page="/Account/Logout" method="post" class="d-flex">
                         <button class="btn btn-outline-danger">Wyloguj</button>
                     </form>
                 </div>

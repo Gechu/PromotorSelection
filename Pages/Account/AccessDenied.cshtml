@@ -1,0 +1,33 @@
+﻿@page
+@model AccessDeniedModel
+@{
+    ViewData["Title"] = "Brak dostępu";
+}
+
+<h1>Brak dostępu</h1>
+<p>Nie masz uprawnień, aby wyświetlić tę stronę.</p>
+
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    if (User.IsInRole("Admin"))
+    {
+        <a asp-page="/Admin/Index">Powrót na stronę główną</a>
+    }
+    else if (User.IsInRole("Promotor"))
+    {
+        <a asp-page="/Promotor/Index">Powrót na stronę główną</a>
+    }
+    else if (User.IsInRole("Student"))
+    {
+        <a asp-page="/Student/Index">Powrót na stronę główną</a>
+    }
+    else
+    {
+        <a asp-page="/Index">Powrót na stronę główną</a>
+    }
+}
+else
+{
+    <a asp-page="/Index">Powrót na stronę główną</a>
+}

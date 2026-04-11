@@ -1,10 +1,6 @@
-﻿@using Microsoft.AspNetCore.Identity
-
-@inject SignInManager<IdentityUser> SignInManager
-@inject UserManager<IdentityUser> UserManager
-
+﻿
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,7 +13,7 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">PromotorSelection</a>
+                <a class="navbar-brand" asp-page="/Index">PromotorSelection</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -25,31 +21,38 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            @if (SignInManager.IsSignedIn(User))
+                            @if (User.Identity?.IsAuthenticated ?? false)
                             {
                                 if (User.IsInRole("Admin"))
                                 {
-                                    <a class="nav-link text-dark" asp-area="" asp-page="/Admin/Index">Home</a>
+                                    <a class="nav-link text-dark" asp-page="/Admin/Index">Home (Admin)</a>
                                 }
                                 else if (User.IsInRole("Promotor"))
                                 {
-                                    <a class="nav-link text-dark" asp-area="" asp-page="/Promotor/Index">Home</a>
+                                    <a class="nav-link text-dark" asp-page="/Promotor/Index">Home (Promotor)</a>
                                 }
                                 else if (User.IsInRole("Student"))
                                 {
-                                    <a class="nav-link text-dark" asp-area="" asp-page="/Student/Index">Home</a>
+                                    <a class="nav-link text-dark" asp-page="/Student/Index">Home (Student)</a>
                                 }
                             }
                             else
                             {
-                                <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+                                <a class="nav-link text-dark" asp-page="/Index">Home</a>
                             }
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-page="/Privacy">Privacy</a>
                         </li>
                     </ul>
+
+                    @if (User.Identity?.IsAuthenticated ?? false)
+                    {
+                        <form asp-page="/Account/Logout" method="post" class="form-inline">
+                            <button type="submit" class="btn btn-link text-dark nav-link" style="border:none;">Wyloguj</button>
+                        </form>
+                    }
                 </div>
             </div>
         </nav>
@@ -62,7 +65,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2026 - PromotorSelection - <a asp-area="" asp-page="/Privacy">Privacy</a>
+            &copy; 2026 - PromotorSelection - <a asp-page="/Privacy">Privacy</a>
         </div>
     </footer>
 
