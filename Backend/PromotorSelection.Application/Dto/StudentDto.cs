@@ -2,9 +2,10 @@
 {
     public class StudentDto
     {
-        public int Id { get; set; }
-        public string NrAlbumu { get; set; } = string.Empty;
-        public double SredniaOcen { get; set; }
+        public string AlbumNumber { get; set; } = string.Empty;
+        public double GradeAverage { get; set; }
         public int UserId { get; set; }
+
+        public int TeamId { get; set; }
     }
 }

@@ -24,11 +24,6 @@ namespace PromotorSelection.Infrastructure.Repositories
             return await _context.Students.FindAsync(id);
         }
 
-        public async Task AddAsync(Student student)
-        {
-            await _context.Students.AddAsync(student);
-        }
-
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();

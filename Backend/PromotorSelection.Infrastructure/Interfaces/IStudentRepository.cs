@@ -6,7 +6,6 @@ namespace PromotorSelection.Infrastructure.Interfaces
     {
         Task<IEnumerable<Student>> GetAllAsync();
         Task<Student?> GetByIdAsync(int id);
-        Task AddAsync(Student student);
         Task SaveChangesAsync();
     }
 }

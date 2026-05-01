@@ -21,4 +21,10 @@
     <ProjectReference Include="..\PromotorSelection.Domain\PromotorSelection.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="db.sqlite">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

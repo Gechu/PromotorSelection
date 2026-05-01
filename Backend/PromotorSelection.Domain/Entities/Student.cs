@@ -1,33 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace PromotorSelection.Domain.Entities;
 
-namespace PromotorSelection.Domain.Entities
+public class Student
 {
-    public class Student
-    {
-        public int Id { get; set; }
-        public string NrAlbumu { get; set; } = string.Empty;
-        public double SredniaOcen { get; set; }
+    public int Id { get; set; }
+    public string AlbumNumber { get; set; } = string.Empty;
+    public double? GradeAverage { get; set; }
 
-        public int UserId { get; set; }
-        public User User { get; set; } = null!;
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
 
-        public int? TeamId { get; set; } 
-        public Team? Team { get; set; }
+    public int? TeamId { get; set; }
+    public Team? Team { get; set; }
 
-        public ICollection<Preference> Wybory { get; set; } = new List<Preference>();
-    }
+    public ICollection<Preference> Preferences { get; set; } = new List<Preference>();
+}
 
-    public class Team
-    {
-        public int Id { get; set; }
-        public int RozmiarZespołu { get; set; }
-        public int LiderId { get; set; }
+public class Team
+{
+    public int Id { get; set; }
+    public int TeamSize { get; set; }
+    public int LeaderId { get; set; }
 
-        public ICollection<Student> Studenci { get; set; } = new List<Student>();
-        public ICollection<Assignment> Przydzialy { get; set; } = new List<Assignment>();
-    }
+    public ICollection<Student> Students { get; set; } = new List<Student>();
+    public ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
 }
