@@ -56,13 +56,13 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Promotor>(entity => {
             entity.ToTable("promotorzy");
-            entity.HasKey(e => e.Id); 
-            entity.Property(e => e.Id).HasColumnName("id_promotor");
+            entity.HasKey(e => e.UserId); 
+            entity.Property(e => e.UserId).HasColumnName("id_promotor");
             entity.Property(e => e.StudentLimit).HasColumnName("max_studentow");
-
+            entity.Ignore(e => e.Id);
             entity.HasOne(p => p.User)
                   .WithOne(u => u.Promotor)
-                  .HasForeignKey<Promotor>(p => p.Id);
+                  .HasForeignKey<Promotor>(p => p.UserId);
         });
 
         modelBuilder.Entity<Team>(entity => {

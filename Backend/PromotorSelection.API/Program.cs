@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Infrastructure;
 using PromotorSelection.Application.Students;
-using PromotorSelection.Infrastructure.Interfaces;
-using PromotorSelection.Infrastructure.Repositories;
+
 using PromotorSelection.Application.Common.Behaviors;
 using PromotorSelection.API.Middleware;
 using FluentValidation;
@@ -20,14 +19,17 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddAutoMapper(typeof(PromotorSelection.Application.Mappings.MappingProfile).Assembly);
-
-//do studenta
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddValidatorsFromAssembly(typeof(GetStudentsQuery).Assembly);
 builder.Services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssembly(typeof(GetStudentsQuery).Assembly);
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+});
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowAll", policy => {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
 });
 
-builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 var app = builder.Build();
 
@@ -36,7 +38,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionHandling>();
 app.UseAuthorization();

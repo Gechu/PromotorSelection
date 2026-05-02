@@ -1,7 +1,8 @@
 ﻿using MediatR;
+using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Dto;
+using PromotorSelection.Infrastructure;
 using AutoMapper;
-using PromotorSelection.Infrastructure.Interfaces;
 
 namespace PromotorSelection.Application.Users;
 
@@ -9,13 +10,19 @@ public record GetUsersQuery : IRequest<IEnumerable<UserDto>>;
 
 public class GetUsersHandler : IRequestHandler<GetUsersQuery, IEnumerable<UserDto>>
 {
-    private readonly IUserRepository _repo;
+    private readonly ApplicationDbContext _context;
     private readonly IMapper _mapper;
-    public GetUsersHandler(IUserRepository repo, IMapper mapper) { _repo = repo; _mapper = mapper; }
+
+    public GetUsersHandler(ApplicationDbContext context, IMapper mapper)
+    {
+        _context = context;
+        _mapper = mapper;
+    }
 
     public async Task<IEnumerable<UserDto>> Handle(GetUsersQuery request, CancellationToken ct)
     {
-        var users = await _repo.GetAllAsync();
+        var users = await _context.Users.Include(u => u.Student).Include(u => u.Promotor).ToListAsync(ct);
+
         return _mapper.Map<IEnumerable<UserDto>>(users);
     }
 }

@@ -1,36 +1,23 @@
-﻿using MediatR;
+﻿using AutoMapper;
+using MediatR;
 using PromotorSelection.Application.Dto;
 using PromotorSelection.Domain.Entities;
-using PromotorSelection.Infrastructure.Interfaces;
 using PromotorSelection.Infrastructure;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace PromotorSelection.Application.Users;
 
-public class CreateUserCommand : IRequest<UserDto>
-{
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public int RoleId { get; set; } 
-
-    public string? AlbumNumber { get; set; }  = string.Empty;
-    public int? StudentLimit { get; set; } = null;
-}
+public record CreateUserCommand(string FirstName,string LastName,string Email,string Password,int RoleId,string? AlbumNumber,int? StudentLimit) : IRequest<UserDto>;
 
 public class CreateUserHandler : IRequestHandler<CreateUserCommand, UserDto>
 {
-    private readonly IUserRepository _repo;
-    private readonly IMapper _mapper;
     private readonly ApplicationDbContext _context;
+    private readonly IMapper _mapper;
 
-    public CreateUserHandler(IUserRepository repo, IMapper mapper, ApplicationDbContext context)
+    public CreateUserHandler(ApplicationDbContext context, IMapper mapper)
     {
-        _repo = repo;
-        _mapper = mapper;
         _context = context;
+        _mapper = mapper;
     }
 
     public async Task<UserDto> Handle(CreateUserCommand request, CancellationToken ct)
@@ -48,31 +35,33 @@ public class CreateUserHandler : IRequestHandler<CreateUserCommand, UserDto>
                 RoleId = request.RoleId
             };
 
-            await _repo.AddAsync(user);
-            await _repo.SaveChangesAsync();
+            _context.Users.Add(user);
 
-            if (request.RoleId == 1)
+            await _context.SaveChangesAsync(ct);
+
+            if (request.RoleId == 1) 
             {
-                await _repo.AddStudentAsync(new Student
+                var student = new Student
                 {
                     UserId = user.Id,
                     AlbumNumber = request.AlbumNumber ?? "000000",
-                    GradeAverage = null 
-                });
-                await _repo.SaveChangesAsync();
+                    GradeAverage = null
+                };
+                _context.Students.Add(student);
             }
-
-            else if (request.RoleId == 2)
+            else if (request.RoleId == 2) 
             {
-                await _repo.AddPromotorAsync(new Promotor
+                var promotor = new Promotor
                 {
                     UserId = user.Id,
-                    StudentLimit = request.StudentLimit ?? 10 
-                });
-                await _repo.SaveChangesAsync();
+                    StudentLimit = request.StudentLimit ?? 10
+                };
+                _context.Promotors.Add(promotor);
             }
 
+            await _context.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
+
             return _mapper.Map<UserDto>(user);
         }
         catch (Exception)

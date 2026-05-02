@@ -12,12 +12,3 @@ public class Promotor
     public ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
 }
 
-public class Topic
-{
-    public int Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-
-    public int PromotorId { get; set; }
-    public Promotor Promotor { get; set; } = null!;
-}

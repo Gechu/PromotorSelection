@@ -6,14 +6,9 @@ public class UserDto
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
-    public int RoleId { get; set; } 
+    public int RoleId { get; set; }
+    public string? AlbumNumber { get; set; }
+    public double? GradeAverage { get; set; }
+    public int? StudentLimit { get; set; }
 }
 
-public class CreateUserRequest
-{
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty; 
-    public int RoleId { get; set; }
-}

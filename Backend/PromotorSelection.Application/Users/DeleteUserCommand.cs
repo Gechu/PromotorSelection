@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Infrastructure;
-using PromotorSelection.Infrastructure.Interfaces;
 
 namespace PromotorSelection.Application.Users;
 

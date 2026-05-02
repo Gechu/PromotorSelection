@@ -12,5 +12,6 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
         RuleFor(x => x.Password).NotEmpty().MinimumLength(6);
         RuleFor(x => x.RoleId).InclusiveBetween(1, 3);
         RuleFor(x => x.AlbumNumber).NotEmpty().When(x => x.RoleId == 1);
+        RuleFor(x => x.StudentLimit).NotEmpty().GreaterThan(0).When(x => x.RoleId == 2);
     }
 }

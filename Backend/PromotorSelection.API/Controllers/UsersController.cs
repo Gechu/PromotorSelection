@@ -23,6 +23,17 @@ public class UsersController : ControllerBase
         return CreatedAtAction(nameof(GetUsers), new { id = result.Id }, result);
     }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserCommand command)
+    {
+        if (id != command.UserId) return BadRequest("ID mismatch");
+
+        var result = await _mediator.Send(command);
+
+        if (!result) return NotFound();
+        return NoContent();
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
