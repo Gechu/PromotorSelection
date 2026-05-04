@@ -6,4 +6,38 @@
 }
 
 <h1>Lista studentów</h1>
-<p>Ta strona będzie wyświetlać listę studentów.</p>
+
+@if (Model.Students.Count == 0)
+{
+    <p>Brak studentów do wyświetlenia.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>UserId</th>
+                <th>Imię</th>
+                <th>Nazwisko</th>
+                <th>Email</th>
+                <th>Nr albumu</th>
+                <th>Średnia</th>
+                <th>Zespół</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in Model.Students)
+            {
+                <tr>
+                    <td>@s.UserId</td>
+                    <td>@s.FirstName</td>
+                    <td>@s.LastName</td>
+                    <td>@s.Email</td>
+                    <td>@s.AlbumNumber</td>
+                    <td>@s.GradeAverage</td>
+                    <td>@s.TeamId</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
