@@ -24,7 +24,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PromotorSelection.Application", "Backend\PromotorSelection.Application\PromotorSelection.Application.csproj", "{C84663B8-A8B6-2CD6-ABED-C31BD15FED23}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7A8D5968-254C-D0C9-C4BA-7FBBA6BA79EE} = {7A8D5968-254C-D0C9-C4BA-7FBBA6BA79EE}
-		{C9B715ED-FFA5-19EC-2346-8F3D748C91DF} = {C9B715ED-FFA5-19EC-2346-8F3D748C91DF}
 	EndProjectSection
 EndProject
 Global

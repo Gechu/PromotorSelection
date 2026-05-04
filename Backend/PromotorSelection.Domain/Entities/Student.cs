@@ -15,12 +15,3 @@ public class Student
     public ICollection<Preference> Preferences { get; set; } = new List<Preference>();
 }
 
-public class Team
-{
-    public int Id { get; set; }
-    public int TeamSize { get; set; }
-    public int LeaderId { get; set; }
-
-    public ICollection<Student> Students { get; set; } = new List<Student>();
-    public ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
-}

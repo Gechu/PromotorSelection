@@ -1,5 +1,6 @@
 ﻿using MediatR;
-using PromotorSelection.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using PromotorSelection.Application.Common.Interfaces;
 
 namespace PromotorSelection.Application.Topics;
 
@@ -7,12 +8,23 @@ public record UpdateTopicCommand(int Id, string Title, string Description) : IRe
 
 public class UpdateTopicHandler : IRequestHandler<UpdateTopicCommand, bool>
 {
-    private readonly ApplicationDbContext _context;
-    public UpdateTopicHandler(ApplicationDbContext context) => _context = context;
+    private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
+
+    public UpdateTopicHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    {
+        _context = context;
+        _currentUserService = currentUserService;
+    }
 
     public async Task<bool> Handle(UpdateTopicCommand request, CancellationToken ct)
     {
-        var topic = await _context.Topics.FindAsync(new object[] { request.Id }, ct);
+        var userId = _currentUserService.UserId;
+
+  
+        var topic = await _context.Topics
+            .FirstOrDefaultAsync(t => t.Id == request.Id && t.Promotor.UserId == userId, ct);
+
         if (topic == null) return false;
 
         topic.Title = request.Title;

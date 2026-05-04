@@ -2,7 +2,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Dto;
-using PromotorSelection.Infrastructure;
+using PromotorSelection.Application.Common.Interfaces;
+
 
 namespace PromotorSelection.Application.Students;
 
@@ -10,10 +11,10 @@ public record GetStudentsQuery() : IRequest<IEnumerable<StudentDto>>;
 
 public class GetStudentsHandler : IRequestHandler<GetStudentsQuery, IEnumerable<StudentDto>>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;
 
-    public GetStudentsHandler(ApplicationDbContext context, IMapper mapper)
+    public GetStudentsHandler(IApplicationDbContext context, IMapper mapper)
     {
         _context = context;
         _mapper = mapper;

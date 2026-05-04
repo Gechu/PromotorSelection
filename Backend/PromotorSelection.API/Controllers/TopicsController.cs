@@ -2,11 +2,13 @@
 using Microsoft.AspNetCore.Mvc;
 using PromotorSelection.Application.Topics;
 using PromotorSelection.Application.Dto;
+using Microsoft.AspNetCore.Authorization;
 
 namespace PromotorSelection.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "2,3")]
 public class TopicsController : ControllerBase
 {
     private readonly IMediator _mediator;

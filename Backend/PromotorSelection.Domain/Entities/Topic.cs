@@ -7,4 +7,6 @@ public class Topic
     public string Description { get; set; } = string.Empty;
 
     public int PromotorId { get; set; }
+
+    public virtual Promotor Promotor { get; set; } = null!;
 }

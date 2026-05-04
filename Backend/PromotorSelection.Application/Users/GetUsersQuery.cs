@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Dto;
-using PromotorSelection.Infrastructure;
+using PromotorSelection.Application.Common.Interfaces;
 using AutoMapper;
 
 namespace PromotorSelection.Application.Users;
@@ -10,10 +10,10 @@ public record GetUsersQuery : IRequest<IEnumerable<UserDto>>;
 
 public class GetUsersHandler : IRequestHandler<GetUsersQuery, IEnumerable<UserDto>>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;
 
-    public GetUsersHandler(ApplicationDbContext context, IMapper mapper)
+    public GetUsersHandler(IApplicationDbContext context, IMapper mapper)
     {
         _context = context;
         _mapper = mapper;

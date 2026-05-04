@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Domain.Entities;
+using PromotorSelection.Application.Common.Interfaces;
 
 namespace PromotorSelection.Infrastructure;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
@@ -17,6 +18,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<Assignment> Assignments => Set<Assignment>();
     public DbSet<Schedule> Schedules => Set<Schedule>();
 
+    public async Task BeginTransactionAsync(CancellationToken ct)=> await Database.BeginTransactionAsync(ct);
+
+    public async Task CommitTransactionAsync(CancellationToken ct)=> await Database.CommitTransactionAsync(ct);
+
+    public async Task RollbackTransactionAsync(CancellationToken ct)=> await Database.RollbackTransactionAsync(ct);
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -52,6 +58,11 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(s => s.User)
                   .WithOne(u => u.Student)
                   .HasForeignKey<Student>(s => s.UserId);
+
+            entity.HasOne(s => s.Team)
+                  .WithMany(t => t.Members)
+                  .HasForeignKey(s => s.TeamId)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Promotor>(entity => {
@@ -80,6 +91,10 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Title).HasColumnName("temat");
             entity.Property(e => e.Description).HasColumnName("opis");
             entity.Property(e => e.PromotorId).HasColumnName("id_promotor");
+            entity.HasOne(t => t.Promotor)
+          .WithMany(p => p.Topics)
+          .HasForeignKey(t => t.PromotorId)
+          .HasPrincipalKey(p => p.UserId);
         });
 
         modelBuilder.Entity<Preference>(entity => {

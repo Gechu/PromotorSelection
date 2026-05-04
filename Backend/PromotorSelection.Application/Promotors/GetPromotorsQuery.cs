@@ -2,18 +2,19 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Dto;
-using PromotorSelection.Infrastructure;
+using PromotorSelection.Application.Common.Interfaces;
+
 
 namespace PromotorSelection.Application.Promotors;
 
-public class GetPromotorsQuery : IRequest<IEnumerable<PromotorDto>> { }
+public record GetPromotorsQuery() : IRequest<IEnumerable<PromotorDto>>;
 
 public class GetPromotorsHandler : IRequestHandler<GetPromotorsQuery, IEnumerable<PromotorDto>>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;
 
-    public GetPromotorsHandler(ApplicationDbContext context, IMapper mapper)
+    public GetPromotorsHandler(IApplicationDbContext context, IMapper mapper)
     {
         _context = context;
         _mapper = mapper;

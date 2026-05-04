@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
-using PromotorSelection.Infrastructure;
+using PromotorSelection.Application.Common.Interfaces;
 
 namespace PromotorSelection.Application.Users;
 
@@ -8,40 +8,46 @@ public record DeleteUserCommand(int Id) : IRequest;
 
 public class DeleteUserHandler : IRequestHandler<DeleteUserCommand>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IApplicationDbContext _context;
 
-    public DeleteUserHandler(ApplicationDbContext context)
+    public DeleteUserHandler(IApplicationDbContext context)
     {
         _context = context;
     }
 
     public async Task Handle(DeleteUserCommand request, CancellationToken ct)
     {
-        var user = await _context.Users.FindAsync(new object[] { request.Id }, ct);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.Id, ct);
+
         if (user == null) return;
 
-        using var transaction = await _context.Database.BeginTransactionAsync(ct);
+        await _context.BeginTransactionAsync(ct);
 
         try
         {
-            if (user.RoleId == 1)
+
+            if (user.RoleId == 1) 
             {
-                var student = await _context.Students.FirstOrDefaultAsync(s => s.UserId == user.Id, ct);
+                var student = await _context.Students
+                    .FirstOrDefaultAsync(s => s.UserId == user.Id, ct);
                 if (student != null) _context.Students.Remove(student);
             }
-            else if (user.RoleId == 2) 
+            else if (user.RoleId == 2)
             {
-                var promotor = await _context.Promotors.FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
+                var promotor = await _context.Promotors
+                    .FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
                 if (promotor != null) _context.Promotors.Remove(promotor);
             }
 
             _context.Users.Remove(user);
+
             await _context.SaveChangesAsync(ct);
-            await transaction.CommitAsync(ct);
+
+            await _context.CommitTransactionAsync(ct);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            await transaction.RollbackAsync(ct);
+            await _context.RollbackTransactionAsync(ct);
             throw;
         }
     }
