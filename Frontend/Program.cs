@@ -13,7 +13,7 @@ namespace PromotorSelection
             //adres backendu, rejestracja httpClient
             builder.Services.AddHttpClient("BackendAPI", client =>
             {
-                client.BaseAddress = new Uri("https://localhost:7001/");  //prawdopodobnie, jeszcze nie wiem jaki dokladnie adres
+                client.BaseAddress = new Uri("http://localhost:5005/");  // Ustawiony poprawny adres backendu
             });
 
             // Blokowanie dostępu dla użytkowników
