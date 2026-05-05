@@ -20,4 +20,11 @@ public class PromotorsController : ControllerBase
         return Ok(await _mediator.Send(new GetPromotorsQuery()));
     }
 
+    [Authorize(Roles ="2,3")]
+    [HttpPut]
+    public async Task<IActionResult> UpdateLimit([FromBody] UpdateStudentLimitCommand command)
+    {
+        return Ok(await _mediator.Send(command));
+    }
+
 }

@@ -23,30 +23,27 @@ public class SetPreferencesHandler : IRequestHandler<SetPreferencesCommand, bool
     public async Task<bool> Handle(SetPreferencesCommand request, CancellationToken ct)
     {
         if (!await _statusService.IsSystemActiveAsync(ct))
-            throw new Exception("Modyfikacja danych jest możliwa tylko w wyznaczonym terminie."); 
+            throw new Exception("Modyfikacja danych jest możliwa tylko w wyznaczonym terminie.");
 
-        var userId = _currentUser.UserId ?? throw new Exception("Nieautoryzowany dostęp.");
+        var currentUserId = _currentUser.UserId ?? throw new Exception("Nieautoryzowany dostęp.");
 
         var student = await _context.Students
             .Include(s => s.Team)
             .ThenInclude(t => t.Members)
-            .FirstOrDefaultAsync(s => s.UserId == userId, ct);
+            .FirstOrDefaultAsync(s => s.UserId == currentUserId, ct);
 
-        if (student == null)
-            throw new Exception("Nie znaleziono profilu studenta.");
+        if (student == null) throw new Exception("Nie znaleziono profilu studenta.");
 
-        if (student.TeamId != null && student.Team!.LeaderId != userId)
-            throw new Exception("Tylko lider zespołu może dokonać wyboru promotorów.");
+        if (student.TeamId != null && student.Team!.LeaderId != currentUserId)
+            throw new Exception("Tylko lider zespołu może dokonać wyboru.");
 
-        if (request.PromotorIds.Count != 3)
-            throw new Exception("Musisz wybrać dokładnie trzech promotorów.");
+        var studentIdsToUpdate = student.TeamId == null
+            ? new List<int> { student.UserId }
+            : student.Team.Members.Select(m => m.UserId).ToList();
 
-        if (request.PromotorIds.Distinct().Count() != 3)
-            throw new Exception("Wybrani promotorzy muszą być różni.");
-
-        var studentIdsToUpdate = student.TeamId == null ? new List<int> { student.Id }: student.Team.Members.Select(m => m.Id).ToList();
-
-        var existingPrefs = await _context.Preferences.Where(p => studentIdsToUpdate.Contains(p.StudentId)).ToListAsync(ct);
+        var existingPrefs = await _context.Preferences
+            .Where(p => studentIdsToUpdate.Contains(p.StudentId))
+            .ToListAsync(ct);
 
         _context.Preferences.RemoveRange(existingPrefs);
 
@@ -54,13 +51,12 @@ public class SetPreferencesHandler : IRequestHandler<SetPreferencesCommand, bool
         {
             for (int i = 0; i < request.PromotorIds.Count; i++)
             {
-                var pref = new Preference
+                _context.Preferences.Add(new Preference
                 {
                     StudentId = sId,
                     PromotorId = request.PromotorIds[i],
-                    Priority = i + 1 
-                };
-                _context.Preferences.Add(pref);
+                    Priority = i + 1
+                });
             }
         }
 

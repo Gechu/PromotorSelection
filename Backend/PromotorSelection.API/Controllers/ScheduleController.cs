@@ -20,7 +20,7 @@ public class SchedulesController : ControllerBase
     }
 
     [Authorize(Roles = "3")]
-    [HttpPost]
+    [HttpPost("change-schedule")]
     public async Task<IActionResult> UpdateSchedule([FromBody] UpdateScheduleCommand command)
     {
         return Ok(await _mediator.Send(command));
@@ -34,5 +34,12 @@ public class SchedulesController : ControllerBase
             IsActive = await _statusService.IsSystemActiveAsync(),
             Message = await _statusService.GetCurrentStatusMessageAsync()
         });
+    }
+
+    [Authorize(Roles = "3")]
+    [HttpPost("run-allocation")]
+    public async Task<IActionResult> RunAllocation()
+    {
+        return Ok(await _mediator.Send(new RunAllocationCommand()));
     }
 }
