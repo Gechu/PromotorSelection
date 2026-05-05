@@ -10,15 +10,20 @@ public class LeaveTeamHandler : IRequestHandler<LeaveTeamCommand, bool>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly ISystemStatusService _statusService;
 
-    public LeaveTeamHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public LeaveTeamHandler(IApplicationDbContext context, ICurrentUserService currentUser, ISystemStatusService statusService)
     {
         _context = context;
         _currentUser = currentUser;
+        _statusService = statusService;
     }
 
     public async Task<bool> Handle(LeaveTeamCommand request, CancellationToken ct)
     {
+        if (!await _statusService.IsSystemActiveAsync(ct))
+            throw new Exception("Modyfikacja danych jest możliwa tylko w wyznaczonym terminie.");
+
         var userId = _currentUser.UserId;
         var student = await _context.Students
             .Include(s => s.Team)
@@ -28,9 +33,9 @@ public class LeaveTeamHandler : IRequestHandler<LeaveTeamCommand, bool>
         if (student == null || student.TeamId == null) return false;
 
         var team = student.Team;
-        student.TeamId = null; 
+        student.TeamId = null;
 
-        if (team.Members.Count == 1) 
+        if (team.Members.Count == 1)
         {
             _context.Teams.Remove(team);
         }

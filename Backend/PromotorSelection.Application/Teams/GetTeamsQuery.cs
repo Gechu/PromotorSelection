@@ -18,12 +18,20 @@ public class GetTeamsHandler : IRequestHandler<GetTeamsQuery, List<TeamDto>>
 
     public async Task<List<TeamDto>> Handle(GetTeamsQuery request, CancellationToken ct)
     {
-        return await _context.Teams.Include(t => t.Members).Select(t => new TeamDto
+        return await _context.Teams
+            .Include(t => t.Members).ThenInclude(s => s.User)
+            .Select(t => new TeamDto
             {
                 Id = t.Id,
                 TeamSize = t.TeamSize,
                 LeaderId = t.LeaderId,
-                CurrentMembersCount = t.Members.Count
+                CurrentMembersCount = t.Members.Count,
+                Members = t.Members.Select(s => new TeamMemberDto
+                {
+                    UserId = s.UserId,
+                    FirstName = s.User.FirstName,
+                    LastName = s.User.LastName
+                }).ToList()
             }).ToListAsync(ct);
     }
 }

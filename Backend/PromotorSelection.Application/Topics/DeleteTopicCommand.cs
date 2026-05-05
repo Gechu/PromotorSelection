@@ -10,15 +10,20 @@ public class DeleteTopicHandler : IRequestHandler<DeleteTopicCommand, bool>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ISystemStatusService _statusService;
 
-    public DeleteTopicHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public DeleteTopicHandler(IApplicationDbContext context, ICurrentUserService currentUserService, ISystemStatusService statusService)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _statusService = statusService;
     }
 
     public async Task<bool> Handle(DeleteTopicCommand request, CancellationToken ct)
     {
+        if (!await _statusService.IsSystemActiveAsync(ct))
+            throw new Exception("Modyfikacja danych jest możliwa tylko w wyznaczonym terminie.");
+
         var userId = _currentUserService.UserId;
 
         var topic = await _context.Topics

@@ -11,15 +11,20 @@ public class CreateTeamHandler : IRequestHandler<CreateTeamCommand, int>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly ISystemStatusService _statusService;
 
-    public CreateTeamHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public CreateTeamHandler(IApplicationDbContext context, ICurrentUserService currentUser, ISystemStatusService statusService)
     {
         _context = context;
         _currentUser = currentUser;
+        _statusService = statusService;
     }
 
     public async Task<int> Handle(CreateTeamCommand request, CancellationToken ct)
     {
+        if (!await _statusService.IsSystemActiveAsync(ct))
+            throw new Exception("Modyfikacja danych jest możliwa tylko w wyznaczonym terminie.");
+
         var userId = _currentUser.UserId;
         var student = await _context.Students
             .FirstOrDefaultAsync(s => s.UserId == userId, ct);

@@ -15,7 +15,7 @@ public class TeamsController : ControllerBase
     public TeamsController(IMediator mediator) => _mediator = mediator;
     
     
-    [HttpGet("all")]
+    [HttpGet]
     public async Task<ActionResult<List<TeamDto>>> GetAllTeams()
     {
         return Ok(await _mediator.Send(new GetTeamsQuery()));

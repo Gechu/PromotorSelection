@@ -25,5 +25,12 @@ public class StudentsController : ControllerBase
         return Ok(result);
     }
 
+    [Authorize(Roles = "1,3")]
+    [HttpPut]
+    public async Task<ActionResult<bool>> UpdateGrade([FromBody] UpdateGradeCommand command)
+    {
+        return Ok(await _mediator.Send(command));
+    }
+
 
 }

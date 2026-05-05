@@ -28,14 +28,12 @@ public class DeleteUserHandler : IRequestHandler<DeleteUserCommand>
 
             if (user.RoleId == 1) 
             {
-                var student = await _context.Students
-                    .FirstOrDefaultAsync(s => s.UserId == user.Id, ct);
+                var student = await _context.Students.FirstOrDefaultAsync(s => s.UserId == user.Id, ct);
                 if (student != null) _context.Students.Remove(student);
             }
             else if (user.RoleId == 2)
             {
-                var promotor = await _context.Promotors
-                    .FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
+                var promotor = await _context.Promotors.FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
                 if (promotor != null) _context.Promotors.Remove(promotor);
             }
 

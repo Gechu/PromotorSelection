@@ -10,15 +10,20 @@ public class JoinTeamHandler : IRequestHandler<JoinTeamCommand, bool>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly ISystemStatusService _statusService;
 
-    public JoinTeamHandler(IApplicationDbContext context, ICurrentUserService currentUser)
+    public JoinTeamHandler(IApplicationDbContext context, ICurrentUserService currentUser, ISystemStatusService statusService)
     {
         _context = context;
         _currentUser = currentUser;
+        _statusService = statusService;
     }
 
     public async Task<bool> Handle(JoinTeamCommand request, CancellationToken ct)
     {
+        if (!await _statusService.IsSystemActiveAsync(ct))
+            throw new Exception("Modyfikacja danych jest możliwa tylko w wyznaczonym terminie.");
+
         var team = await _context.Teams.Include(t => t.Members).FirstOrDefaultAsync(t => t.Id == request.TeamId, ct);
 
         if (team == null || team.TeamSize == -1)
