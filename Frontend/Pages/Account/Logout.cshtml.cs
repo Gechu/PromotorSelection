@@ -1,6 +1,5 @@
 ﻿#nullable disable
 
-using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
@@ -20,20 +19,18 @@ namespace PromotorSelection.Pages.Account
 
         public async Task<IActionResult> OnPost(string returnUrl = null)
         {
-            // Zamiast SignInManager, czyścimy ciasteczko bezpośrednio w HttpContext
-            // "MyCookieAuth" musi być takie samo jak nazwa podana w Program.cs
+            // 1) Usuń token do backendu (JWT), żeby API też przestało działać po wylogowaniu
+            Response.Cookies.Delete("BackendToken");
+
+            // 2) Wyloguj z UI (cookie auth Razor Pages)
             await HttpContext.SignOutAsync("MyCookieAuth");
 
-            _logger.LogInformation("Użytkownik wylogowany (czyszczenie ciasteczka).");
+            _logger.LogInformation("Użytkownik wylogowany. Usunięto MyCookieAuth oraz BackendToken.");
 
-            if (returnUrl != null)
-            {
+            if (!string.IsNullOrWhiteSpace(returnUrl))
                 return LocalRedirect(returnUrl);
-            }
-            else
-            {
-                return RedirectToPage("/Index");
-            }
+
+            return RedirectToPage("/Index");
         }
     }
 }

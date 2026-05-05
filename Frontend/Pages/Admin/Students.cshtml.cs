@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace PromotorSelection.Pages.Admin
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "3")]
     public class StudentsModel : PageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;

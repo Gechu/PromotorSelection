@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace PromotorSelection.Pages.Student
 {
-    [Authorize(Roles = "Student")]
+    [Authorize(Roles = "1")]
     public class PreferencesModel : PageModel
     {
         public void OnGet()

@@ -10,32 +10,28 @@ namespace PromotorSelection
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            //adres backendu, rejestracja httpClient
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddTransient<PromotorSelection.Auth.BackendApiAuthHandler>();
+
             builder.Services.AddHttpClient("BackendAPI", client =>
             {
-                client.BaseAddress = new Uri("http://localhost:5005/");  // Ustawiony poprawny adres backendu
-            });
+                client.BaseAddress = new Uri("http://localhost:5005/");
+            })
+            .AddHttpMessageHandler<PromotorSelection.Auth.BackendApiAuthHandler>();
 
-            // Blokowanie dostępu dla użytkowników
             builder.Services.AddRazorPages(options =>
             {
-                // Pozwól na dostęp anonimowy do strony głównej
                 options.Conventions.AllowAnonymousToPage("/Index");
-
             });
 
-            //ciasteczka przez api beda
             builder.Services.AddAuthentication("MyCookieAuth").AddCookie("MyCookieAuth", options =>
-             {
-                 options.Cookie.Name = "MyCookieAuth";
-                 options.LoginPath = "/Account/Login";
-                 options.AccessDeniedPath = "/Account/AccessDenied";
-             });
-
+            {
+                options.Cookie.Name = "MyCookieAuth";
+                options.LoginPath = "/Account/Login";
+                options.AccessDeniedPath = "/Account/AccessDenied";
+            });
 
             var app = builder.Build();
-
-
 
             if (!app.Environment.IsDevelopment())
             {

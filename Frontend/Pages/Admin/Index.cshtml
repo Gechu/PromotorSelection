@@ -5,6 +5,76 @@
     ViewData["Title"] = "Panel administratora";
 }
 
-<h1>Panel administratora</h1>
+<h1 class="mb-2">Panel administratora</h1>
+<p class="text-muted">Zarządzanie systemem wyboru promotorów.</p>
 
-<p>Zarządzanie systemem wyboru promotorów.</p>
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">
+        @Model.ErrorMessage
+    </div>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Studenci</div>
+                <div class="display-6">@Model.StudentsCount</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Promotorzy</div>
+                <div class="display-6">@Model.PromotorsCount</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Zespoły</div>
+                <div class="display-6">@Model.TeamsCount</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Nieprzydzieleni (szacunek)</div>
+                <div class="display-6">@Model.UnassignedStudentsCount</div>
+                <div class="small text-muted">
+                    Liczone jako: TeamId == 0
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        Szybkie akcje
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-primary" asp-page="/Admin/Students">Studenci</a>
+            <a class="btn btn-primary" asp-page="/Admin/Promotors">Promotorzy</a>
+            <a class="btn btn-primary" asp-page="/Admin/Schedule">Harmonogram</a>
+
+            <a class="btn btn-outline-primary" asp-page="/Admin/Teams">Zespoły</a>
+            <a class="btn btn-outline-primary" asp-page="/Admin/Users">Użytkownicy</a>
+            <a class="btn btn-outline-primary" asp-page="/Admin/Topics">Tematy</a>
+        </div>
+
+        <hr />
+
+        <div class="small text-muted">
+            Kolejne rzeczy do dodania na tej stronie: status harmonogramu, ostatni import CSV, linki do raportów PDF/XLSX.
+        </div>
+    </div>
+</div>
