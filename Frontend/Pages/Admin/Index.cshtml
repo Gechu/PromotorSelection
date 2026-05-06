@@ -10,9 +10,7 @@
 
 @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
 {
-    <div class="alert alert-danger">
-        @Model.ErrorMessage
-    </div>
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
 }
 
 <div class="row g-3 mb-4">
@@ -46,35 +44,58 @@
     <div class="col-12 col-md-3">
         <div class="card shadow-sm">
             <div class="card-body">
-                <div class="text-muted">Nieprzydzieleni (szacunek)</div>
-                <div class="display-6">@Model.UnassignedStudentsCount</div>
-                <div class="small text-muted">
-                    Liczone jako: TeamId == 0
-                </div>
+                <div class="text-muted">Tematy</div>
+                <div class="display-6">@Model.TopicsCount</div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-header">
-        Szybkie akcje
-    </div>
-    <div class="card-body">
-        <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-primary" asp-page="/Admin/Students">Studenci</a>
-            <a class="btn btn-primary" asp-page="/Admin/Promotors">Promotorzy</a>
-            <a class="btn btn-primary" asp-page="/Admin/Schedule">Harmonogram</a>
+<div class="row g-3">
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Status harmonogramu / tury</div>
+            <div class="card-body">
+                @if (Model.ScheduleStatus is null)
+                {
+                    <div class="text-muted">Brak danych o statusie (endpoint api/Schedules nie zwrócił odpowiedzi).</div>
+                }
+                else
+                {
+                    <div class="mb-2">
+                        <span class="badge bg-@(Model.ScheduleStatus.IsActive ? "success" : "secondary")">
+                            @(Model.ScheduleStatus.IsActive ? "Aktywne" : "Nieaktywne")
+                        </span>
+                    </div>
+                    <div>@(Model.ScheduleStatus.Message ?? "—")</div>
 
-            <a class="btn btn-outline-primary" asp-page="/Admin/Teams">Zespoły</a>
-            <a class="btn btn-outline-primary" asp-page="/Admin/Users">Użytkownicy</a>
-            <a class="btn btn-outline-primary" asp-page="/Admin/Topics">Tematy</a>
+                    <div class="mt-3">
+                        <a class="btn btn-outline-primary" asp-page="/Admin/Schedule">Przejdź do harmonogramu</a>
+                    </div>
+                }
+            </div>
         </div>
+    </div>
 
-        <hr />
-
-        <div class="small text-muted">
-            Kolejne rzeczy do dodania na tej stronie: status harmonogramu, ostatni import CSV, linki do raportów PDF/XLSX.
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Alerty</div>
+            <div class="card-body">
+                @if (Model.Alerts.Count == 0)
+                {
+                    <div class="text-muted">Brak alertów — wygląda OK.</div>
+                }
+                else
+                {
+                    foreach (var a in Model.Alerts)
+                    {
+                        <div class="alert alert-@a.Level mb-2">
+                            <div class="fw-semibold">@a.Title</div>
+                            <div>@a.Details</div>
+                        </div>
+                    }
+                }
+            </div>
         </div>
     </div>
 </div>

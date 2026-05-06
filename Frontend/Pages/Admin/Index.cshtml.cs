@@ -19,7 +19,10 @@ namespace PromotorSelection.Pages.Admin
         public int StudentsCount { get; private set; }
         public int PromotorsCount { get; private set; }
         public int TeamsCount { get; private set; }
-        public int UnassignedStudentsCount { get; private set; }
+        public int TopicsCount { get; private set; }
+
+        public List<AlertItem> Alerts { get; private set; } = new();
+        public ScheduleStatusDto? ScheduleStatus { get; private set; }
 
         public string? ErrorMessage { get; private set; }
 
@@ -29,44 +32,116 @@ namespace PromotorSelection.Pages.Admin
             {
                 var client = _httpClientFactory.CreateClient("BackendAPI");
 
-                // 1) Students
-                var students = await client.GetFromJsonAsync<List<StudentDto>>("api/Students")
-                               ?? new List<StudentDto>();
+                // Pobranie danych (osobno; mo¿na te¿ równolegle, ale na razie prosto)
+                var students = await client.GetFromJsonAsync<List<StudentDto>>("api/Students") ?? new();
+                var promotors = await client.GetFromJsonAsync<List<PromotorDto>>("api/Promotors") ?? new();
+                var teams = await client.GetFromJsonAsync<List<TeamDto>>("api/Teams") ?? new();
+                var topics = await client.GetFromJsonAsync<List<TopicDto>>("api/Topics") ?? new();
+
                 StudentsCount = students.Count;
-                UnassignedStudentsCount = students.Count(s => s.TeamId == 0);
-
-                // 2) Promotors
-                var promotors = await client.GetFromJsonAsync<List<PromotorDto>>("api/Promotors")
-                                ?? new List<PromotorDto>();
                 PromotorsCount = promotors.Count;
-
-                // 3) Teams (w backendzie kontroler ma [Authorize(Roles="1,3")])
-                var teams = await client.GetFromJsonAsync<List<TeamDto>>("api/Teams")
-                            ?? new List<TeamDto>();
                 TeamsCount = teams.Count;
+                TopicsCount = topics.Count;
+
+                // Status harmonogramu/systemu (API: GET api/Schedules)
+                // zwraca { IsActive, Message }
+                ScheduleStatus = await client.GetFromJsonAsync<ScheduleStatusDto>("api/Schedules");
+
+                BuildAlerts(students, promotors, topics);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas ³adowania dashboardu admina.");
-                ErrorMessage = "Nie uda³o siê pobraæ danych z backendu do dashboardu admina. SprawdŸ czy backend dzia³a oraz czy autoryzacja (role) jest spójna.";
+                _logger.LogError(ex, "B³¹d podczas ³adowania panelu administratora.");
+                ErrorMessage = "Nie uda³o siê pobraæ danych z backendu do panelu administratora.";
             }
         }
 
-        // Minimalne DTO: trzymamy tylko pola potrzebne do statystyk.
-        // Je¿eli kontrakt API ma inne nazwy, dopasuj je.
+        private void BuildAlerts(List<StudentDto> students, List<PromotorDto> promotors, List<TopicDto> topics)
+        {
+            Alerts = new List<AlertItem>();
+
+            // Alert 1: brak studentów
+            if (students.Count == 0)
+            {
+                Alerts.Add(AlertItem.Danger(
+                    title: "Brak studentów w systemie",
+                    details: "Zaimportuj studentów lub dodaj ich rêcznie, inaczej wybory nie rusz¹."
+                ));
+            }
+
+            // Alert 2: brak promotorów
+            if (promotors.Count == 0)
+            {
+                Alerts.Add(AlertItem.Danger(
+                    title: "Brak promotorów w systemie",
+                    details: "Dodaj promotorów, inaczej studenci nie bêd¹ mieli kogo wybraæ."
+                ));
+            }
+
+            // Alert 3: brak tematów
+            if (topics.Count == 0)
+            {
+                Alerts.Add(AlertItem.Warning(
+                    title: "Brak tematów",
+                    details: "Promotorzy nie dodali jeszcze tematów — studenci nie bêd¹ mieli czego wybieraæ."
+                ));
+            }
+
+            // Alert 4: za ma³o miejsc u promotorów vs liczba studentów
+            var totalSeats = promotors.Sum(p => p.StudentLimit ?? 0);
+            if (promotors.Count > 0 && students.Count > 0 && totalSeats > 0 && totalSeats < students.Count)
+            {
+                Alerts.Add(AlertItem.Warning(
+                    title: "Za ma³o miejsc u promotorów",
+                    details: $"Suma limitów promotorów ({totalSeats}) jest mniejsza ni¿ liczba studentów ({students.Count})."
+                ));
+            }
+
+            // Je¿eli totalSeats==0 a s¹ promotorzy — to te¿ jest podejrzane (opcjonalnie jako INFO)
+            if (promotors.Count > 0 && totalSeats == 0)
+            {
+                Alerts.Add(AlertItem.Info(
+                    title: "Limity promotorów wygl¹daj¹ na nieustawione",
+                    details: "Suma limitów = 0. SprawdŸ czy endpoint /api/Promotors zwraca StudentLimit lub czy limity s¹ ustawione."
+                ));
+            }
+        }
+
+        // ===== DTO minimalne do statystyk/alertów =====
+
         public class StudentDto
         {
-            public int TeamId { get; set; }
+            public int UserId { get; set; }
         }
 
         public class PromotorDto
         {
             public int Id { get; set; }
+
+            public int? StudentLimit { get; set; }
         }
 
         public class TeamDto
         {
             public int Id { get; set; }
+        }
+
+        public class TopicDto
+        {
+            public int Id { get; set; }
+        }
+
+        public class ScheduleStatusDto
+        {
+            public bool IsActive { get; set; }
+            public string? Message { get; set; }
+        }
+
+        public record AlertItem(string Level, string Title, string Details)
+        {
+            public static AlertItem Danger(string title, string details) => new("danger", title, details);
+            public static AlertItem Warning(string title, string details) => new("warning", title, details);
+            public static AlertItem Info(string title, string details) => new("info", title, details);
         }
     }
 }
