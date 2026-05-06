@@ -5,5 +5,251 @@
     ViewData["Title"] = "Lista promotorów";
 }
 
-<h1>Lista promotorów</h1>
-<p>Ta strona będzie wyświetlać listę promotorów.</p>
+<h1 class="mb-3">Lista promotorów</h1>
+
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<form method="get" id="promotorsFilterForm" class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-10">
+        <label class="form-label">Szukaj</label>
+        <input class="form-control"
+               id="qInput"
+               name="Q"
+               value="@Model.Q"
+               autocomplete="off"
+               placeholder="Imię, nazwisko, email, UserId lub limit..." />
+    </div>
+
+    <div class="col-12 col-md-2 d-flex gap-2">
+        <a class="btn btn-outline-secondary"
+           asp-page="/Admin/Promotors">
+            Wyczyść
+        </a>
+    </div>
+
+    <input type="hidden" name="Sort" value="@Model.Sort" />
+    <input type="hidden" name="Dir" value="@Model.Dir" />
+</form>
+
+<div class="mb-3 text-muted">
+    Wyniki: <strong>@Model.FilteredCount</strong> / @Model.TotalCount
+</div>
+
+<style>
+    .sort-link {
+        color: inherit;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .sort-link:hover { text-decoration: underline; }
+    .sort-icon {
+        display: inline-block;
+        width: 1.2em;
+        text-align: center;
+        opacity: .7;
+        margin-left: .25rem;
+    }
+
+    /* klikany wiersz */
+    tr.promotor-row { cursor: pointer; }
+    tr.promotor-row:hover { background: rgba(0,0,0,.03); }
+</style>
+
+@if (Model.Promotors.Count == 0)
+{
+    <p>Brak promotorów do wyświetlenia.</p>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>UserId</th>
+
+                <th>
+                    <a class="sort-link"
+                       asp-page="/Admin/Promotors"
+                       asp-route-Q="@Model.Q"
+                       asp-route-Sort="lastName"
+                       asp-route-Dir="@Model.NextDir("lastName")">
+                        Nazwisko <span class="sort-icon">@Model.SortIcon("lastName")</span>
+                    </a>
+                </th>
+
+                <th>Imię</th>
+                <th>Email</th>
+
+                <th class="text-end">
+                    <a class="sort-link"
+                       asp-page="/Admin/Promotors"
+                       asp-route-Q="@Model.Q"
+                       asp-route-Sort="limit"
+                       asp-route-Dir="@Model.NextDir("limit")">
+                        Limit <span class="sort-icon">@Model.SortIcon("limit")</span>
+                    </a>
+                </th>
+
+                <th style="width: 220px;">Akcje</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var p in Model.Promotors)
+            {
+                var detailsId = $"topics-{p.UserId}";
+                <tr class="promotor-row" data-userid="@p.UserId" data-details="@detailsId">
+                    <td>@p.UserId</td>
+                    <td>@p.LastName</td>
+                    <td>@p.FirstName</td>
+                    <td>@p.Email</td>
+
+                    <td class="text-end">
+                        <span class="limit-view">@p.StudentLimit</span>
+
+                        <form method="post"
+                              asp-page-handler="UpdateLimit"
+                              class="limit-edit d-none mt-1"
+                              style="min-width: 170px;">
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden" name="UserId" value="@p.UserId" />
+                            <input type="hidden" name="FirstName" value="@p.FirstName" />
+                            <input type="hidden" name="LastName" value="@p.LastName" />
+                            <input type="hidden" name="Email" value="@p.Email" />
+
+                            <div class="input-group input-group-sm">
+                                <input class="form-control"
+                                       name="NewLimit"
+                                       type="number"
+                                       step="1"
+                                       min="0"
+                                       value="@p.StudentLimit" />
+                                <button class="btn btn-success" type="submit">Zapisz</button>
+                            </div>
+
+                            <button type="button" class="btn btn-link btn-sm p-0 mt-1 cancel-limit">Anuluj</button>
+                        </form>
+                    </td>
+
+                    <td>
+                        <button type="button" class="btn btn-outline-primary btn-sm start-limit">
+                            Edytuj limit
+                        </button>
+                        <span class="badge bg-secondary ms-2">Tematy: @p.Topics.Count</span>
+                    </td>
+                </tr>
+
+                <tr id="@detailsId" class="d-none">
+                    <td colspan="6">
+                        <div class="p-3 border rounded bg-light">
+                            <div class="fw-semibold mb-2">Tematy promotora</div>
+
+                            @if (p.Topics.Count == 0)
+                            {
+                                <div class="text-muted">Brak tematów.</div>
+                            }
+                            else
+                            {
+                                <ul class="mb-0">
+                                    @foreach (var t in p.Topics)
+                                    {
+                                        <li class="mb-2">
+                                            <div class="fw-semibold">@t.Title</div>
+                                            @if (!string.IsNullOrWhiteSpace(t.Description))
+                                            {
+                                                <div class="text-muted">@t.Description</div>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<script>
+    (function () {
+        const form = document.getElementById('promotorsFilterForm');
+        const input = document.getElementById('qInput');
+
+        // live search + focus po reloadzie
+        if (form && input) {
+            window.addEventListener('load', () => {
+                input.focus({ preventScroll: true });
+                const v = input.value;
+                input.setSelectionRange(v.length, v.length);
+            });
+
+            let t = null;
+            input.addEventListener('input', function () {
+                clearTimeout(t);
+                t = setTimeout(() => form.requestSubmit(), 250);
+            });
+        }
+
+        function toggleDetails(detailsRowId) {
+            const row = document.getElementById(detailsRowId);
+            if (!row) return;
+            row.classList.toggle('d-none');
+        }
+
+        function showLimitEdit(mainRow) {
+            mainRow.querySelector('.limit-view')?.classList.add('d-none');
+            mainRow.querySelector('.limit-edit')?.classList.remove('d-none');
+            mainRow.querySelector('.start-limit')?.classList.add('d-none');
+
+            const input = mainRow.querySelector('input[name="NewLimit"]');
+            if (input) {
+                input.focus({ preventScroll: true });
+                input.select();
+            }
+        }
+
+        function hideLimitEdit(mainRow) {
+            mainRow.querySelector('.limit-view')?.classList.remove('d-none');
+            mainRow.querySelector('.limit-edit')?.classList.add('d-none');
+            mainRow.querySelector('.start-limit')?.classList.remove('d-none');
+        }
+
+        document.addEventListener('click', function (e) {
+            // Edycja limitu
+            const startBtn = e.target.closest('.start-limit');
+            if (startBtn) {
+                e.stopPropagation();
+                const row = startBtn.closest('tr');
+                if (row) showLimitEdit(row);
+                return;
+            }
+
+            const cancelBtn = e.target.closest('.cancel-limit');
+            if (cancelBtn) {
+                e.stopPropagation();
+                const row = cancelBtn.closest('tr');
+                if (row) hideLimitEdit(row);
+                return;
+            }
+
+            // Nie rozwijaj tematów, gdy klikamy wewnątrz formularza (np. input/submit)
+            if (e.target.closest('form')) return;
+            if (e.target.closest('button')) return;
+
+            // Rozwijanie tematów po kliknięciu w wiersz promotora
+            const promotorRow = e.target.closest('tr.promotor-row');
+            if (promotorRow) {
+                const detailsId = promotorRow.getAttribute('data-details');
+                if (detailsId) toggleDetails(detailsId);
+            }
+        });
+    })();
+</script>

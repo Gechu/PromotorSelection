@@ -5,5 +5,263 @@
     ViewData["Title"] = "Zespoły projektowe";
 }
 
-<h1>Zespoły projektowe</h1>
-<p>Ta strona będzie służyć do zarządzania zespołami.</p>
+<h1 class="mb-3">Zespoły projektowe</h1>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<form method="get" id="teamsFilterForm" class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-10">
+        <label class="form-label">Szukaj</label>
+        <input class="form-control"
+               id="qInput"
+               name="Q"
+               value="@Model.Q"
+               autocomplete="off"
+               placeholder="Id zespołu, lider, liczba członków, nazwisko/email/album członka..." />
+    </div>
+
+    <div class="col-12 col-md-2 d-flex gap-2">
+        <a class="btn btn-outline-secondary"
+           asp-page="/Admin/Teams">
+            Wyczyść
+        </a>
+    </div>
+
+    <input type="hidden" name="Sort" value="@Model.Sort" />
+    <input type="hidden" name="Dir" value="@Model.Dir" />
+</form>
+
+<div class="mb-3 text-muted">
+    Wyniki: <strong>@Model.FilteredCount</strong> / @Model.TotalCount
+</div>
+
+<style>
+    .sort-link {
+        color: inherit;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+        .sort-link:hover {
+            text-decoration: underline;
+        }
+
+    .sort-icon {
+        display: inline-block;
+        width: 1.2em;
+        text-align: center;
+        opacity: .7;
+        margin-left: .25rem;
+    }
+
+    tr.team-row {
+        cursor: pointer;
+    }
+
+        tr.team-row:hover {
+            background: rgba(0,0,0,.03);
+        }
+
+    .leader-pill {
+        font-weight: 700;
+    }
+
+    /* Wyrównanie kolumn w tabelkach członków */
+    .members-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+        .members-table th,
+        .members-table td {
+            vertical-align: top;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            white-space: normal;
+        }
+
+    .members-email {
+        font-size: .95em;
+    }
+</style>
+
+@if (Model.Teams.Count == 0)
+{
+    <p>Brak zespołów do wyświetlenia.</p>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>
+                    <a class="sort-link"
+                       asp-page="/Admin/Teams"
+                       asp-route-Q="@Model.Q"
+                       asp-route-Sort="id"
+                       asp-route-Dir="@Model.NextDir("id")">
+                        Id <span class="sort-icon">@Model.SortIcon("id")</span>
+                    </a>
+                </th>
+
+                <th>Lider</th>
+
+                <th class="text-end">
+                    <a class="sort-link"
+                       asp-page="/Admin/Teams"
+                       asp-route-Q="@Model.Q"
+                       asp-route-Sort="members"
+                       asp-route-Dir="@Model.NextDir("members")">
+                        Członkowie <span class="sort-icon">@Model.SortIcon("members")</span>
+                    </a>
+                </th>
+
+                <th class="text-end">Miejsca</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var t in Model.Teams)
+            {
+                var detailsId = $"members-{t.Id}";
+
+                <tr class="team-row" data-details="@detailsId">
+                    <td>@t.Id</td>
+                    <td>@t.LeaderDisplayName</td>
+                    <td class="text-end">@t.CurrentMembersCount</td>
+
+                    <td class="text-end">
+                        @if (t.IsClosed)
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                        else
+                        {
+                            <span>@t.CurrentMembersCount / @t.TeamSize</span>
+                        }
+                    </td>
+
+                    <td>
+                        @if (t.IsClosed)
+                        {
+                            <span class="badge bg-secondary">komplet</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">otwarty</span>
+                        }
+                    </td>
+                </tr>
+
+                <tr id="@detailsId" class="d-none">
+                    <td colspan="5">
+                        <div class="p-3 border rounded bg-light">
+                            <div class="fw-semibold mb-2">Członkowie zespołu</div>
+
+                            @if (t.Members.Count == 0)
+                            {
+                                <div class="text-muted">Brak członków.</div>
+                            }
+                            else
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0 members-table">
+                                        <colgroup>
+                                            <col style="width: 30%;" />
+                                            <col style="width: 35%;" />
+                                            <col style="width: 20%;" />
+                                            <col style="width: 15%;" />
+                                        </colgroup>
+
+                                        <thead>
+                                            <tr>
+                                                <th>Imię i nazwisko</th>
+                                                <th>Email</th>
+                                                <th>Nr albumu</th>
+                                                <th class="text-end">Średnia</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            @foreach (var m in t.Members.OrderBy(x => x.LastName).ThenBy(x => x.FirstName))
+                                            {
+                                                var isLeader = m.UserId == t.LeaderId;
+                                                <tr>
+                                                    <td>
+                                                        @if (isLeader)
+                                                        {
+                                                            <span class="leader-pill">@m.LastName @m.FirstName</span>
+                                                            <span class="text-muted">(lider)</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            @m.LastName @m.FirstName
+                                                        }
+                                                    </td>
+
+                                                    <td class="members-email">
+                                                        @(string.IsNullOrWhiteSpace(m.Email) ? "—" : m.Email)
+                                                    </td>
+
+                                                    <td>
+                                                        @(string.IsNullOrWhiteSpace(m.AlbumNumber) ? "—" : m.AlbumNumber)
+                                                    </td>
+
+                                                    <td class="text-end">
+                                                        @(m.GradeAverage.HasValue? m.GradeAverage.Value.ToString("0.00") : "—")
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<script>
+    (function () {
+        const form = document.getElementById('teamsFilterForm');
+        const input = document.getElementById('qInput');
+
+        // live search + focus po reloadzie
+        if (form && input) {
+            window.addEventListener('load', () => {
+                input.focus({ preventScroll: true });
+                const v = input.value;
+                input.setSelectionRange(v.length, v.length);
+            });
+
+            let t = null;
+            input.addEventListener('input', function () {
+                clearTimeout(t);
+                t = setTimeout(() => form.requestSubmit(), 250);
+            });
+        }
+
+        function toggleDetails(detailsRowId) {
+            const row = document.getElementById(detailsRowId);
+            if (!row) return;
+            row.classList.toggle('d-none');
+        }
+
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('a, button, input, select, textarea, form')) return;
+
+            const teamRow = e.target.closest('tr.team-row');
+            if (teamRow) {
+                const detailsId = teamRow.getAttribute('data-details');
+                if (detailsId) toggleDetails(detailsId);
+            }
+        });
+    })();
+</script>
