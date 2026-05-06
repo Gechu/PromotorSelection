@@ -32,22 +32,23 @@ namespace PromotorSelection.Pages.Admin
             {
                 var client = _httpClientFactory.CreateClient("BackendAPI");
 
-                // Pobranie danych (osobno; mo¿na te¿ równolegle, ale na razie prosto)
+                // Pobranie danych
                 var students = await client.GetFromJsonAsync<List<StudentDto>>("api/Students") ?? new();
                 var promotors = await client.GetFromJsonAsync<List<PromotorDto>>("api/Promotors") ?? new();
                 var teams = await client.GetFromJsonAsync<List<TeamDto>>("api/Teams") ?? new();
-                var topics = await client.GetFromJsonAsync<List<TopicDto>>("api/Topics") ?? new();
 
                 StudentsCount = students.Count;
                 PromotorsCount = promotors.Count;
                 TeamsCount = teams.Count;
-                TopicsCount = topics.Count;
+
+                // Tematy liczymy z /api/Promotors (bo /api/Topics zwraca tylko tematy aktualnie zalogowanego promotora)
+                TopicsCount = promotors.Sum(p => p.Topics?.Count ?? 0);
 
                 // Status harmonogramu/systemu (API: GET api/Schedules)
                 // zwraca { IsActive, Message }
                 ScheduleStatus = await client.GetFromJsonAsync<ScheduleStatusDto>("api/Schedules");
 
-                BuildAlerts(students, promotors, topics);
+                BuildAlerts(students, promotors, TopicsCount);
             }
             catch (Exception ex)
             {
@@ -56,7 +57,7 @@ namespace PromotorSelection.Pages.Admin
             }
         }
 
-        private void BuildAlerts(List<StudentDto> students, List<PromotorDto> promotors, List<TopicDto> topics)
+        private void BuildAlerts(List<StudentDto> students, List<PromotorDto> promotors, int topicsCount)
         {
             Alerts = new List<AlertItem>();
 
@@ -79,7 +80,7 @@ namespace PromotorSelection.Pages.Admin
             }
 
             // Alert 3: brak tematów
-            if (topics.Count == 0)
+            if (topicsCount == 0)
             {
                 Alerts.Add(AlertItem.Warning(
                     title: "Brak tematów",
@@ -88,6 +89,7 @@ namespace PromotorSelection.Pages.Admin
             }
 
             // Alert 4: za ma³o miejsc u promotorów vs liczba studentów
+            // (w backendowym DTO StudentLimit jest int, ale tu zostawiamy nullable, ¿eby nie wywala³o jakby przysz³o inaczej)
             var totalSeats = promotors.Sum(p => p.StudentLimit ?? 0);
             if (promotors.Count > 0 && students.Count > 0 && totalSeats > 0 && totalSeats < students.Count)
             {
@@ -97,7 +99,6 @@ namespace PromotorSelection.Pages.Admin
                 ));
             }
 
-            // Je¿eli totalSeats==0 a s¹ promotorzy — to te¿ jest podejrzane (opcjonalnie jako INFO)
             if (promotors.Count > 0 && totalSeats == 0)
             {
                 Alerts.Add(AlertItem.Info(
@@ -116,9 +117,13 @@ namespace PromotorSelection.Pages.Admin
 
         public class PromotorDto
         {
-            public int Id { get; set; }
+            // w backendzie PromotorDto ma UserId, ale nie zaszkodzi jeœli nie u¿ywamy
+            public int UserId { get; set; }
 
             public int? StudentLimit { get; set; }
+
+            // KLUCZOWE: /api/Promotors zwraca Topics
+            public List<TopicDto> Topics { get; set; } = new();
         }
 
         public class TeamDto
@@ -129,6 +134,9 @@ namespace PromotorSelection.Pages.Admin
         public class TopicDto
         {
             public int Id { get; set; }
+            public string? Title { get; set; }
+            public string? Description { get; set; }
+            public int PromotorId { get; set; }
         }
 
         public class ScheduleStatusDto

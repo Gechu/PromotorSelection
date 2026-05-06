@@ -7,6 +7,15 @@
 
 <h1 class="mb-3">Lista studentów</h1>
 
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
 <form method="get" id="studentsFilterForm" class="row g-2 align-items-end mb-3">
     <div class="col-12 col-md-10">
         <label class="form-label">Szukaj</label>
@@ -25,7 +34,6 @@
         </a>
     </div>
 
-    @* utrzymujemy sort w query string *@
     <input type="hidden" name="Sort" value="@Model.Sort" />
     <input type="hidden" name="Dir" value="@Model.Dir" />
 </form>
@@ -43,9 +51,11 @@
         text-decoration: none;
         font-weight: 600;
     }
-    .sort-link:hover {
-        text-decoration: underline;
-    }
+
+        .sort-link:hover {
+            text-decoration: underline;
+        }
+
     .sort-icon {
         display: inline-block;
         width: 1.2em;
@@ -72,8 +82,7 @@ else
                        asp-route-Q="@Model.Q"
                        asp-route-Sort="lastName"
                        asp-route-Dir="@Model.NextDir("lastName")">
-                        Nazwisko
-                        <span class="sort-icon">@Model.SortIcon("lastName")</span>
+                        Nazwisko <span class="sort-icon">@Model.SortIcon("lastName")</span>
                     </a>
                 </th>
 
@@ -87,8 +96,7 @@ else
                        asp-route-Q="@Model.Q"
                        asp-route-Sort="grade"
                        asp-route-Dir="@Model.NextDir("grade")">
-                        Średnia
-                        <span class="sort-icon">@Model.SortIcon("grade")</span>
+                        Średnia <span class="sort-icon">@Model.SortIcon("grade")</span>
                     </a>
                 </th>
 
@@ -98,23 +106,54 @@ else
                        asp-route-Q="@Model.Q"
                        asp-route-Sort="team"
                        asp-route-Dir="@Model.NextDir("team")">
-                        Zespół
-                        <span class="sort-icon">@Model.SortIcon("team")</span>
+                        Zespół <span class="sort-icon">@Model.SortIcon("team")</span>
                     </a>
                 </th>
+
+                <th style="width: 220px;">Akcje</th>
             </tr>
         </thead>
 
         <tbody>
             @foreach (var s in Model.Students)
             {
-                <tr>
+                <tr data-row="@s.UserId">
                     <td>@s.UserId</td>
                     <td>@s.LastName</td>
                     <td>@s.FirstName</td>
                     <td>@s.Email</td>
                     <td>@s.AlbumNumber</td>
-                    <td class="text-end">@s.GradeAverage.ToString("0.00")</td>
+
+                    <td class="text-end">
+                        <span class="grade-view">@s.GradeAverage.ToString("0.00")</span>
+
+                        <form method="post"
+                              asp-page-handler="UpdateGrade"
+                              class="grade-edit d-none mt-1"
+                              style="min-width: 170px;">
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden" name="UserId" value="@s.UserId" />
+                            <input type="hidden" name="FirstName" value="@s.FirstName" />
+                            <input type="hidden" name="LastName" value="@s.LastName" />
+                            <input type="hidden" name="Email" value="@s.Email" />
+                            <input type="hidden" name="AlbumNumber" value="@s.AlbumNumber" />
+
+                            <div class="input-group input-group-sm">
+                                <input class="form-control"
+                                       name="NewGrade"
+                                       type="number"
+                                       step="0.01"
+                                       min="2.0"
+                                       max="5.5"
+                                       value="@s.GradeAverage.ToString("0.00")" />
+                                <button class="btn btn-success" type="submit">Zapisz</button>
+                            </div>
+
+                            <button type="button" class="btn btn-link btn-sm p-0 mt-1 cancel-edit">Anuluj</button>
+                        </form>
+                    </td>
+
                     <td>
                         @if (s.TeamId == 0)
                         {
@@ -124,6 +163,12 @@ else
                         {
                             <span class="badge bg-success">team @s.TeamId</span>
                         }
+                    </td>
+
+                    <td>
+                        <button type="button" class="btn btn-outline-primary btn-sm start-edit">
+                            Edytuj średnią
+                        </button>
                     </td>
                 </tr>
             }
@@ -135,28 +180,54 @@ else
     (function () {
         const form = document.getElementById('studentsFilterForm');
         const input = document.getElementById('qInput');
-        if (!form || !input) return;
 
-        // 1) Po załadowaniu strony: focus na input i kursor na koniec
-        window.addEventListener('load', () => {
-            input.focus({ preventScroll: true });
-            const v = input.value;
-            input.setSelectionRange(v.length, v.length);
-        });
+        // live search + focus po reloadzie
+        if (form && input) {
+            window.addEventListener('load', () => {
+                input.focus({ preventScroll: true });
+                const v = input.value;
+                input.setSelectionRange(v.length, v.length);
+            });
 
-        // 2) debounce, żeby nie odświeżać strony co chwilę
-        let t = null;
-        input.addEventListener('input', function () {
-            clearTimeout(t);
-            t = setTimeout(() => form.requestSubmit(), 250);
+            let t = null;
+            input.addEventListener('input', function () {
+                clearTimeout(t);
+                t = setTimeout(() => form.requestSubmit(), 250);
+            });
+        }
+
+        function showEdit(row) {
+            row.querySelector('.grade-view')?.classList.add('d-none');
+            row.querySelector('.grade-edit')?.classList.remove('d-none');
+            row.querySelector('.start-edit')?.classList.add('d-none');
+
+            const gradeInput = row.querySelector('input[name="NewGrade"]');
+            if (gradeInput) {
+                gradeInput.focus({ preventScroll: true });
+                gradeInput.select();
+            }
+        }
+
+        function hideEdit(row) {
+            row.querySelector('.grade-view')?.classList.remove('d-none');
+            row.querySelector('.grade-edit')?.classList.add('d-none');
+            row.querySelector('.start-edit')?.classList.remove('d-none');
+        }
+
+        document.addEventListener('click', function (e) {
+            const startBtn = e.target.closest('.start-edit');
+            if (startBtn) {
+                const row = startBtn.closest('tr');
+                if (row) showEdit(row);
+                return;
+            }
+
+            const cancelBtn = e.target.closest('.cancel-edit');
+            if (cancelBtn) {
+                const row = cancelBtn.closest('tr');
+                if (row) hideEdit(row);
+                return;
+            }
         });
     })();
 </script>
-
-<hr class="mt-4" />
-
-<div class="small text-muted">
-    <strong>TODO:</strong>
-    Po dodaniu endpointu adminowego w backendzie (np. <code>PUT /api/Students/{userId}/grade</code>)
-    dodać w tej tabeli możliwość zmiany średniej (inline albo w modalu) dla wybranego studenta.
-</div>
