@@ -5,5 +5,105 @@
     ViewData["Title"] = "Panel studenta";
 }
 
-<h1>Panel studenta</h1>
-<p>Witaj w systemie wyboru promotorów.</p>
+<h1 class="mb-2">Panel studenta</h1>
+<p class="text-muted">Witaj w systemie wyboru promotorów.</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+@if (Model.Profile is null)
+{
+    <div class="text-muted">Ładowanie danych profilu…</div>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header">Twoje dane</div>
+                <div class="card-body">
+                    <div><span class="text-muted">Imię i nazwisko:</span> <strong>@Model.Profile.LastName @Model.Profile.FirstName</strong></div>
+                    <div><span class="text-muted">Email:</span> <strong>@Model.Profile.Email</strong></div>
+                    <div>
+                        <span class="text-muted">Nr albumu:</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Profile.AlbumNumber) ? "—" : Model.Profile.AlbumNumber)</strong>
+                    </div>
+                    <div>
+                        <span class="text-muted">Średnia:</span>
+                        <strong>@Model.GradeDisplay</strong>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-muted">Tryb pracy:</span>
+                        @if (Model.Profile.TeamId is null || Model.Profile.TeamId == 0)
+                        {
+                            <span class="badge bg-secondary">solo</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">zespół (@Model.Profile.TeamId)</span>
+                        }
+                    </div>
+
+                    <div class="mt-3 small text-muted">
+                        <!--
+                          TODO(SECURITY): Dane profilu pobieramy obecnie z backendu przez /api/Account (OK).
+                          Jeśli kiedykolwiek wrócisz do /api/Students, NIE rób tego — to endpoint listujący wszystkich studentów.
+                        -->
+                        Dane pochodzą z endpointu <code>GET /api/Account</code>.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header">Status tury</div>
+                <div class="card-body">
+                    @if (Model.ScheduleStatus is null)
+                    {
+                        <div class="text-muted">Brak danych o statusie (endpoint api/Schedules nie zwrócił odpowiedzi).</div>
+                    }
+                    else
+                    {
+                        <div class="mb-2">
+                            <span class="badge bg-@(Model.ScheduleStatus.IsActive ? "success" : "secondary")">
+                                @(Model.ScheduleStatus.IsActive ? "Aktywna" : "Nieaktywna")
+                            </span>
+                        </div>
+                        <div>@(Model.ScheduleStatus.Message ?? "—")</div>
+
+                        <div class="mt-3 small text-muted">
+                            (W przyszłości tutaj można dodać odliczanie do końca — backend musi zwracać daty start/koniec.)
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header">Alerty / co warto zrobić</div>
+        <div class="card-body">
+            @if (Model.Alerts.Count == 0)
+            {
+                <div class="text-muted">Brak alertów — wygląda OK.</div>
+            }
+            else
+            {
+                foreach (var a in Model.Alerts)
+                {
+                    <div class="alert alert-@a.Level mb-2">
+                        <div class="fw-semibold">@a.Title</div>
+                        <div>@a.Details</div>
+                    </div>
+                }
+            }
+
+            <div class="small text-muted mt-2">
+                Uwaga: nie sprawdzamy tu jeszcze, czy preferencje promotorów są ustawione (brakuje endpointu GET do odczytu preferencji).
+            </div>
+        </div>
+    </div>
+}
