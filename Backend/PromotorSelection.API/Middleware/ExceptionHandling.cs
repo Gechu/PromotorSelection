@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using PromotorSelection.Application.Common.Exceptions;
 using System.Text.Json;
 
 namespace PromotorSelection.API.Middleware;
@@ -28,24 +29,33 @@ public class ExceptionHandling
     {
         context.Response.ContentType = "application/json";
 
-        var statusCode = StatusCodes.Status500InternalServerError;
-        var result = "";
-
-        if (exception is ValidationException validationException)
+        var statusCode = exception switch
         {
-            statusCode = StatusCodes.Status400BadRequest;
+            ValidationException => StatusCodes.Status400BadRequest,
 
-            var errors = validationException.Errors
-                .Select(e => new { e.PropertyName, e.ErrorMessage });
+            BadRequestException => StatusCodes.Status400BadRequest,
 
-            result = JsonSerializer.Serialize(new { errors });
-        }
-        else
+            NotFoundException => StatusCodes.Status404NotFound,
+
+            _ => StatusCodes.Status500InternalServerError
+        };
+
+        var message = exception.Message;
+
+        var response = new
         {
-            result = JsonSerializer.Serialize(new { error = "Wystąpił nieoczekiwany błąd serwera." });
+            error = statusCode == StatusCodes.Status500InternalServerError ? "Wystąpił nieoczekiwany błąd serwera.": message
+        };
+
+        if (exception is ValidationException valEx)
+        {
+            var errors = valEx.Errors.Select(e => new { e.PropertyName, e.ErrorMessage });
+            var valResponse = JsonSerializer.Serialize(new { errors });
+            context.Response.StatusCode = statusCode;
+            return context.Response.WriteAsync(valResponse);
         }
 
         context.Response.StatusCode = statusCode;
-        return context.Response.WriteAsync(result);
+        return context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 }

@@ -3,7 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Dto;
 using PromotorSelection.Application.Common.Interfaces;
-
+using PromotorSelection.Application.Common.Exceptions;
 
 namespace PromotorSelection.Application.Promotors;
 
@@ -22,7 +22,13 @@ public class GetPromotorsHandler : IRequestHandler<GetPromotorsQuery, IEnumerabl
 
     public async Task<IEnumerable<PromotorDto>> Handle(GetPromotorsQuery request, CancellationToken ct)
     {
-        var promotors = await _context.Promotors.Include(p => p.User).Include(p => p.Topics).ToListAsync(ct);
+        var promotors = await _context.Promotors
+            .Include(p => p.User)
+            .Include(p => p.Topics)
+            .ToListAsync(ct);
+
+        if (promotors == null || !promotors.Any())
+            throw new NotFoundException("Nie znaleziono żadnych promotorów w bazie danych.");
 
         return _mapper.Map<IEnumerable<PromotorDto>>(promotors);
     }

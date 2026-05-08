@@ -1,11 +1,12 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Common.Interfaces;
+using PromotorSelection.Application.Common.Exceptions;
 using BCrypt.Net;
 
 namespace PromotorSelection.Application.Users;
 
-public record UpdateUserCommand(int UserId,string FirstName,string LastName, string Email, string? Password = null, string? AlbumNumber = null,double? GradeAverage = null,int? StudentLimit = null) : IRequest<bool>;
+public record UpdateUserCommand(int UserId, string FirstName, string LastName, string Email, string? Password = null, string? AlbumNumber = null, double? GradeAverage = null, int? StudentLimit = null) : IRequest<bool>;
 
 public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, bool>
 {
@@ -20,7 +21,13 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, bool>
             .Include(u => u.Promotor)
             .FirstOrDefaultAsync(u => u.Id == request.UserId, ct);
 
-        if (user == null) return false;
+        if (user == null)
+            throw new NotFoundException($"Nie znaleziono użytkownika o ID {request.UserId}.");
+
+
+        var emailTaken = await _context.Users.AnyAsync(u => u.Email == request.Email && u.Id != request.UserId, ct);
+        if (emailTaken)
+            throw new BadRequestException($"Adres email {request.Email} jest już zajęty.");
 
         await _context.BeginTransactionAsync(ct);
 
@@ -37,11 +44,22 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, bool>
 
             if (user.RoleId == 1 && user.Student != null)
             {
-                user.Student.AlbumNumber = request.AlbumNumber ?? user.Student.AlbumNumber;
+                if (!string.IsNullOrWhiteSpace(request.AlbumNumber))
+                {
+                    var albumTaken = await _context.Students
+                        .AnyAsync(s => s.AlbumNumber == request.AlbumNumber && s.UserId != user.Id, ct);
+                    if (albumTaken)
+                        throw new BadRequestException($"Numer albumu {request.AlbumNumber} jest już przypisany do innego studenta.");
+
+                    user.Student.AlbumNumber = request.AlbumNumber;
+                }
                 user.Student.GradeAverage = request.GradeAverage ?? user.Student.GradeAverage;
             }
             else if (user.RoleId == 2 && user.Promotor != null)
             {
+                if (request.StudentLimit.HasValue && request.StudentLimit.Value < 0)
+                    throw new BadRequestException("Limit studentów nie może być ujemny.");
+
                 user.Promotor.StudentLimit = request.StudentLimit ?? user.Promotor.StudentLimit;
             }
 

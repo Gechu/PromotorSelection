@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Dto;
 using PromotorSelection.Application.Common.Interfaces;
+using PromotorSelection.Application.Common.Exceptions;
 using AutoMapper;
 
 namespace PromotorSelection.Application.Users;
@@ -21,7 +22,13 @@ public class GetUsersHandler : IRequestHandler<GetUsersQuery, IEnumerable<UserDt
 
     public async Task<IEnumerable<UserDto>> Handle(GetUsersQuery request, CancellationToken ct)
     {
-        var users = await _context.Users.Include(u => u.Student).Include(u => u.Promotor).ToListAsync(ct);
+        var users = await _context.Users
+            .Include(u => u.Student)
+            .Include(u => u.Promotor)
+            .ToListAsync(ct);
+
+        if (users == null)
+            throw new NotFoundException("Błąd podczas pobierania listy użytkowników.");
 
         return _mapper.Map<IEnumerable<UserDto>>(users);
     }

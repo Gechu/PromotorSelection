@@ -28,4 +28,16 @@ public class SystemStatusService : ISystemStatusService
         if (now > schedule.EndDate) return "System został zamknięty.";
         return "System jest aktywny.";
     }
+
+    public async Task<DateTime?> GetStartDateAsync(CancellationToken ct = default)
+    {
+        var schedule = await _context.Schedules.FirstOrDefaultAsync(ct);
+        return schedule?.StartDate;
+    }
+
+    public async Task<DateTime?> GetEndDateAsync(CancellationToken ct = default)
+    {
+        var schedule = await _context.Schedules.FirstOrDefaultAsync(ct);
+        return schedule?.EndDate;
+    }
 }

@@ -26,13 +26,16 @@ public class SchedulesController : ControllerBase
         return Ok(await _mediator.Send(command));
     }
 
+    [Authorize]
     [HttpGet]
     public async Task<IActionResult> GetStatus()
     {
         return Ok(new
         {
             IsActive = await _statusService.IsSystemActiveAsync(),
-            Message = await _statusService.GetCurrentStatusMessageAsync()
+            Message = await _statusService.GetCurrentStatusMessageAsync(),
+            StartDate = await _statusService.GetStartDateAsync(),
+            EndDate = await _statusService.GetEndDateAsync()
         });
     }
 

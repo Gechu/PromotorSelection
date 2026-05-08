@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Common.Interfaces;
+using PromotorSelection.Application.Common.Exceptions;
 
 namespace PromotorSelection.Application.Topics;
 
@@ -22,14 +23,18 @@ public class UpdateTopicHandler : IRequestHandler<UpdateTopicCommand, bool>
     public async Task<bool> Handle(UpdateTopicCommand request, CancellationToken ct)
     {
         if (!await _statusService.IsSystemActiveAsync(ct))
-            throw new Exception("Modyfikacja danych jest możliwa tylko w wyznaczonym terminie.");
+            throw new BadRequestException("Edycja tematów jest możliwa tylko w wyznaczonym terminie.");
 
-        var userId = _currentUserService.UserId;
+        var userId = _currentUserService.UserId ?? throw new BadRequestException("Błąd autoryzacji.");
 
         var topic = await _context.Topics
-            .FirstOrDefaultAsync(t => t.Id == request.Id && t.Promotor.UserId == userId, ct);
+            .FirstOrDefaultAsync(t => t.Id == request.Id, ct);
 
-        if (topic == null) return false;
+        if (topic == null)
+            throw new NotFoundException($"Temat o ID {request.Id} nie istnieje.");
+
+        if (topic.PromotorId != userId)
+            throw new BadRequestException("Nie masz uprawnień do edycji tematu, którego nie jesteś autorem.");
 
         topic.Title = request.Title;
         topic.Description = request.Description;

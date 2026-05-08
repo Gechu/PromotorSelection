@@ -1,7 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 using PromotorSelection.Application.Students;
+using PromotorSelection.Application.Users;
 
 namespace PromotorSelection.API.Controllers;
 
@@ -32,5 +34,17 @@ public class StudentsController : ControllerBase
         return Ok(await _mediator.Send(command));
     }
 
+    [Authorize(Roles = "3")]
+    [HttpPost]
+    public async Task<ActionResult<int>> ImportStudents(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("Nie przesłano pliku.");
+        using var stream = file.OpenReadStream();
+
+        var result = await _mediator.Send(new ImportStudentsCommand(stream));
+
+        return Ok(result);
+    }
 
 }

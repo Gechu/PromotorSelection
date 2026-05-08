@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Common.Interfaces;
+using PromotorSelection.Application.Common.Exceptions;
 using PromotorSelection.Application.Dto;
 using PromotorSelection.Domain.Entities;
 
@@ -24,13 +25,14 @@ public class CreateTopicHandler : IRequestHandler<CreateTopicCommand, TopicDto>
     public async Task<TopicDto> Handle(CreateTopicCommand request, CancellationToken ct)
     {
         if (!await _statusService.IsSystemActiveAsync(ct))
-            throw new Exception("Modyfikacja danych jest możliwa tylko w wyznaczonym terminie.");
+            throw new BadRequestException("Dodawanie tematów prac jest możliwe tylko w wyznaczonym terminie.");
 
-        var userId = _currentUserService.UserId;
+        var userId = _currentUserService.UserId ?? throw new BadRequestException("Błąd autoryzacji: Brak identyfikatora użytkownika.");
 
         var promotor = await _context.Promotors.FirstOrDefaultAsync(p => p.UserId == userId, ct);
 
-        if (promotor == null) throw new UnauthorizedAccessException();
+        if (promotor == null)
+            throw new BadRequestException("Tylko użytkownik z profilem promotora może dodawać tematy prac.");
 
         var topic = new Topic
         {

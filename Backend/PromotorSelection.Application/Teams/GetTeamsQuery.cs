@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Common.Interfaces;
+using PromotorSelection.Application.Common.Exceptions;
 using PromotorSelection.Application.Dto;
 
 namespace PromotorSelection.Application.Teams;
@@ -18,7 +19,7 @@ public class GetTeamsHandler : IRequestHandler<GetTeamsQuery, List<TeamDto>>
 
     public async Task<List<TeamDto>> Handle(GetTeamsQuery request, CancellationToken ct)
     {
-        return await _context.Teams
+        var teams = await _context.Teams
             .Include(t => t.Members).ThenInclude(s => s.User)
             .Select(t => new TeamDto
             {
@@ -33,5 +34,10 @@ public class GetTeamsHandler : IRequestHandler<GetTeamsQuery, List<TeamDto>>
                     LastName = s.User.LastName
                 }).ToList()
             }).ToListAsync(ct);
+
+        if (teams == null)
+            throw new NotFoundException("Nie udało się pobrać listy zespołów.");
+
+        return teams;
     }
 }

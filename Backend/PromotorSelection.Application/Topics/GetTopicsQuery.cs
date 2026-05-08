@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Common.Interfaces;
+using PromotorSelection.Application.Common.Exceptions;
 using PromotorSelection.Application.Dto;
 
 namespace PromotorSelection.Application.Topics;
@@ -20,10 +21,16 @@ public class GetTopicsHandler : IRequestHandler<GetTopicsQuery, IEnumerable<Topi
 
     public async Task<IEnumerable<TopicDto>> Handle(GetTopicsQuery request, CancellationToken ct)
     {
-        var userId = _currentUserService.UserId;
+        var userId = _currentUserService.UserId ?? throw new BadRequestException("Błąd autoryzacji.");
 
-        return await _context.Topics.Where(t => t.Promotor.UserId == userId)
+        var topics = await _context.Topics
+            .Where(t => t.PromotorId == userId)
             .Select(t => new TopicDto(t.Id, t.Title, t.Description, t.PromotorId))
             .ToListAsync(ct);
+
+        if (topics == null)
+            throw new NotFoundException("Nie znaleziono tematów dla Twojego profilu.");
+
+        return topics;
     }
 }

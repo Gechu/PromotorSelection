@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using PromotorSelection.Application.Common.Interfaces;
+using PromotorSelection.Application.Common.Exceptions;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -25,10 +26,12 @@ public class LoginHandler : IRequestHandler<LoginCommand, string?>
     public async Task<string?> Handle(LoginCommand request, CancellationToken ct)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email, ct);
-        if (user == null) return null;
+        if (user == null)
+            throw new BadRequestException("Nieprawidłowy email lub hasło.");
 
         bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-        if (!isPasswordValid) return null;
+        if (!isPasswordValid)
+            throw new BadRequestException("Nieprawidłowy email lub hasło.");
 
         var claims = new List<Claim>
         {
@@ -37,12 +40,16 @@ public class LoginHandler : IRequestHandler<LoginCommand, string?>
             new Claim(ClaimTypes.Role, user.RoleId.ToString())
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+        var jwtKey = _config["Jwt:Key"];
+        if (string.IsNullOrEmpty(jwtKey))
+            throw new Exception("Klucz JWT nie został skonfigurowany na serwerze.");
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
             claims: claims,
-            expires: DateTime.Now.AddHours(1),
+            expires: DateTime.Now.AddHours(8),
             signingCredentials: creds
         );
 

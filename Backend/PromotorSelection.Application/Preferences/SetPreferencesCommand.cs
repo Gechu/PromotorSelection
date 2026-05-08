@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Common.Interfaces;
+using PromotorSelection.Application.Common.Exceptions;
 using PromotorSelection.Domain.Entities;
 
 namespace PromotorSelection.Application.Preferences;
@@ -23,23 +24,39 @@ public class SetPreferencesHandler : IRequestHandler<SetPreferencesCommand, bool
     public async Task<bool> Handle(SetPreferencesCommand request, CancellationToken ct)
     {
         if (!await _statusService.IsSystemActiveAsync(ct))
-            throw new Exception("Modyfikacja danych jest możliwa tylko w wyznaczonym terminie.");
+            throw new BadRequestException("Modyfikacja danych jest możliwa tylko w wyznaczonym terminie.");
 
-        var currentUserId = _currentUser.UserId ?? throw new Exception("Nieautoryzowany dostęp.");
+        var currentUserId = _currentUser.UserId ?? throw new BadRequestException("Brak identyfikatora użytkownika w sesji.");
 
         var student = await _context.Students
             .Include(s => s.Team)
             .ThenInclude(t => t.Members)
             .FirstOrDefaultAsync(s => s.UserId == currentUserId, ct);
 
-        if (student == null) throw new Exception("Nie znaleziono profilu studenta.");
+        if (student == null)
+            throw new NotFoundException("Nie znaleziono profilu studenta w systemie.");
 
         if (student.TeamId != null && student.Team!.LeaderId != currentUserId)
-            throw new Exception("Tylko lider zespołu może dokonać wyboru.");
+            throw new BadRequestException("Tylko lider zespołu posiada uprawnienia do dokonania wyboru promotorów.");
+
+        if (request.PromotorIds.Distinct().Count() != request.PromotorIds.Count)
+            throw new BadRequestException("Lista wybranych promotorów zawiera powtórzenia.");
+
+        var validPromotorsCount = await _context.Promotors
+            .CountAsync(p => request.PromotorIds.Contains(p.UserId), ct);
+
+        if (validPromotorsCount != request.PromotorIds.Count)
+            throw new BadRequestException("Jeden lub więcej wybranych promotorów nie istnieje w bazie danych.");
 
         var studentIdsToUpdate = student.TeamId == null
             ? new List<int> { student.UserId }
             : student.Team.Members.Select(m => m.UserId).ToList();
+
+        var alreadyAssigned = await _context.Assignments
+            .AnyAsync(a => a.StudentId != null && studentIdsToUpdate.Contains(a.StudentId.Value), ct);
+
+        if (alreadyAssigned)
+            throw new BadRequestException("Nie można zmienić preferencji, ponieważ przydział do promotora został już sfinalizowany.");
 
         var existingPrefs = await _context.Preferences
             .Where(p => studentIdsToUpdate.Contains(p.StudentId))

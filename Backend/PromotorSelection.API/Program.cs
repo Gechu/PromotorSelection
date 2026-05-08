@@ -73,7 +73,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ISystemStatusService, SystemStatusService>();
-
+builder.Services.AddTransient<IEmailService, EmailService>();
+builder.Services.AddTransient<IReportService, ReportService>();
 builder.Services.AddAutoMapper(typeof(PromotorSelection.Application.Mappings.MappingProfile).Assembly);
 builder.Services.AddValidatorsFromAssembly(typeof(GetStudentsQuery).Assembly);
 builder.Services.AddMediatR(cfg => {

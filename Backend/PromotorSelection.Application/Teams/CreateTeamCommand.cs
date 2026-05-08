@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Common.Interfaces;
+using PromotorSelection.Application.Common.Exceptions;
 using PromotorSelection.Domain.Entities;
 
 namespace PromotorSelection.Application.Teams;
@@ -23,14 +24,18 @@ public class CreateTeamHandler : IRequestHandler<CreateTeamCommand, int>
     public async Task<int> Handle(CreateTeamCommand request, CancellationToken ct)
     {
         if (!await _statusService.IsSystemActiveAsync(ct))
-            throw new Exception("Modyfikacja danych jest możliwa tylko w wyznaczonym terminie.");
+            throw new BadRequestException("Modyfikacja danych zespołowych jest możliwa tylko w wyznaczonym terminie.");
 
-        var userId = _currentUser.UserId;
+        var userId = _currentUser.UserId ?? throw new BadRequestException("Błąd autoryzacji: Brak identyfikatora użytkownika.");
+
         var student = await _context.Students
             .FirstOrDefaultAsync(s => s.UserId == userId, ct);
 
-        if (student == null || student.TeamId != null)
-            throw new Exception("Nie możesz utworzyć zespołu.");
+        if (student == null)
+            throw new NotFoundException("Nie znaleziono profilu studenta.");
+
+        if (student.TeamId != null)
+            throw new BadRequestException("Nie możesz utworzyć nowego zespołu, ponieważ już należysz do innego zespołu.");
 
         int size = Math.Clamp(request.DesiredSize, 2, 6);
 

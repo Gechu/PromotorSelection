@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Common.Interfaces;
+using PromotorSelection.Application.Common.Exceptions;
 
 namespace PromotorSelection.Application.Promotors;
 
@@ -19,15 +20,21 @@ public class UpdateStudentLimitHandler : IRequestHandler<UpdateStudentLimitComma
 
     public async Task<bool> Handle(UpdateStudentLimitCommand request, CancellationToken ct)
     {
-        var userId = _currentUser.UserId ?? throw new Exception("Brak autoryzacji.");
+        var userId = _currentUser.UserId ?? throw new BadRequestException("Brak autoryzacji lub wygasła sesja użytkownika.");
 
         var promotor = await _context.Promotors.FirstOrDefaultAsync(p => p.UserId == userId, ct);
 
         if (promotor == null)
-            throw new Exception("Nie znaleziono profilu promotora.");
+            throw new NotFoundException("Nie znaleziono profilu promotora powiązanego z zalogowanym użytkownikiem.");
 
         if (request.NewLimit < 0)
-            throw new Exception("Limit nie może być ujemny.");
+            throw new BadRequestException("Limit studentów nie może być wartością ujemną.");
+
+        var currentAssignmentsCount = await _context.Assignments
+            .CountAsync(a => a.PromotorId == userId, ct);
+
+        if (request.NewLimit < currentAssignmentsCount)
+            throw new BadRequestException($"Nie można zmniejszyć limitu do {request.NewLimit}, ponieważ masz już przypisanych {currentAssignmentsCount} studentów.");
 
         promotor.StudentLimit = request.NewLimit;
 

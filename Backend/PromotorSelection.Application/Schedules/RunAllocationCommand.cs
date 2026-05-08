@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
+using PromotorSelection.Application.Allocations;
 using PromotorSelection.Application.Common.Interfaces;
 using PromotorSelection.Domain.Entities;
 
@@ -10,8 +11,12 @@ public record RunAllocationCommand : IRequest<bool>;
 public class RunAllocationHandler : IRequestHandler<RunAllocationCommand, bool>
 {
     private readonly IApplicationDbContext _context;
-
-    public RunAllocationHandler(IApplicationDbContext context) => _context = context;
+    private readonly IPublisher _publisher;
+    public RunAllocationHandler(IApplicationDbContext context,IPublisher publisher)
+    {
+        _context = context;
+        _publisher = publisher;
+    }
 
     public async Task<bool> Handle(RunAllocationCommand request, CancellationToken ct)
     {
@@ -70,6 +75,9 @@ public class RunAllocationHandler : IRequestHandler<RunAllocationCommand, bool>
         }
 
         await _context.SaveChangesAsync(ct);
+
+        await _publisher.Publish(new AllocationFinishedNotification(), ct);
+
         return true;
     }
 }

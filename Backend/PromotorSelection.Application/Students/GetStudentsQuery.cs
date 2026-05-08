@@ -3,7 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PromotorSelection.Application.Dto;
 using PromotorSelection.Application.Common.Interfaces;
-
+using PromotorSelection.Application.Common.Exceptions;
 
 namespace PromotorSelection.Application.Students;
 
@@ -22,7 +22,12 @@ public class GetStudentsHandler : IRequestHandler<GetStudentsQuery, IEnumerable<
 
     public async Task<IEnumerable<StudentDto>> Handle(GetStudentsQuery request, CancellationToken ct)
     {
-        var students = await _context.Students.Include(p => p.User).ToListAsync(ct);
+        var students = await _context.Students
+            .Include(p => p.User)
+            .ToListAsync(ct);
+
+        if (students == null)
+            throw new NotFoundException("Nie udało się pobrać listy studentów.");
 
         return _mapper.Map<IEnumerable<StudentDto>>(students);
     }
