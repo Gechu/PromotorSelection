@@ -5,5 +5,112 @@
     ViewData["Title"] = "Harmonogram wyborów";
 }
 
-<h1>Harmonogram wyborów</h1>
-<p>Tu będzie ustawianie dat rozpoczęcia i zakończenia wyborów.</p>
+<h1 class="mb-2">Harmonogram wyborów</h1>
+<p class="text-muted">Ustal datę rozpoczęcia i zakończenia tury wyborów oraz uruchom przydział po jej zakończeniu.</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<div class="row g-3">
+    <!-- 1) Aktualny harmonogram -->
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Aktualny harmonogram</div>
+            <div class="card-body">
+                @if (Model.Status is null)
+                {
+                    <div class="text-muted">Brak danych (endpoint api/Schedules nie zwrócił odpowiedzi).</div>
+                }
+                else
+                {
+                    <div class="mb-2">
+                        <span class="badge bg-@(Model.Status.IsActive ? "success" : "secondary")">
+                            @(Model.Status.IsActive ? "Aktywna" : "Nieaktywna")
+                        </span>
+                    </div>
+
+                    <div class="mb-3">@((Model.Status.Message ?? "—"))</div>
+
+                    <dl class="row mb-0">
+                        <dt class="col-5 text-muted">Start</dt>
+                        <dd class="col-7">@(Model.Status.StartDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+
+                        <dt class="col-5 text-muted">Koniec</dt>
+                        <dd class="col-7">@(Model.Status.EndDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+                    </dl>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- 2) Formularz ustawienia -->
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Ustaw / zmień harmonogram</div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="Save" class="row g-3">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="col-12">
+                        <label class="form-label">Data rozpoczęcia</label>
+                        <input asp-for="Form.StartDate" class="form-control" type="datetime-local" />
+                        <span asp-validation-for="Form.StartDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Data zakończenia</label>
+                        <input asp-for="Form.EndDate" class="form-control" type="datetime-local" />
+                        <span asp-validation-for="Form.EndDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12 d-flex gap-2">
+                        <button class="btn btn-primary" type="submit">Zapisz harmonogram</button>
+                        <a class="btn btn-outline-secondary" asp-page="/Admin/Schedule">Reset</a>
+                    </div>
+
+                    <div class="col-12 small text-muted">
+                        Uwaga: edycja danych przez studentów/promotorów działa tylko w trakcie aktywnej tury.
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4) Uruchom przydział -->
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">Przydział</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    Przydział można uruchomić dopiero po zakończeniu tury wyborów. Operacja usuwa poprzednie przydziały i tworzy nowe.
+                </div>
+
+                <form method="post" asp-page-handler="RunAllocation"
+                      onsubmit="return confirm('Na pewno uruchomić przydział? Ta operacja może nadpisać poprzednie przydziały.');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-danger">
+                        Uruchom przydział
+                    </button>
+                </form>
+
+                <div class="small text-muted mt-2">
+                    Backend i tak zablokuje uruchomienie przydziału, jeśli tura jeszcze trwa.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

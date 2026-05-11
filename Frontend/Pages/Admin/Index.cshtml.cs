@@ -26,13 +26,36 @@ namespace PromotorSelection.Pages.Admin
 
         public string? ErrorMessage { get; private set; }
 
+        public string? TimeToEndDisplay
+        {
+            get
+            {
+                if (ScheduleStatus?.EndDate is null) return null;
+
+                var now = DateTime.Now;
+                var end = ScheduleStatus.EndDate.Value;
+
+                if (now >= end) return "0m";
+
+                var diff = end - now;
+
+                if (diff.TotalDays >= 1)
+                    return $"{(int)diff.TotalDays}d {diff.Hours}h";
+
+                if (diff.TotalHours >= 1)
+                    return $"{(int)diff.TotalHours}h {diff.Minutes}m";
+
+                return $"{diff.Minutes}m";
+            }
+        }
+
         public async Task OnGetAsync()
         {
             try
             {
                 var client = _httpClientFactory.CreateClient("BackendAPI");
 
-                // Pobranie danych
+                // Dane podstawowe
                 var students = await client.GetFromJsonAsync<List<StudentDto>>("api/Students") ?? new();
                 var promotors = await client.GetFromJsonAsync<List<PromotorDto>>("api/Promotors") ?? new();
                 var teams = await client.GetFromJsonAsync<List<TeamDto>>("api/Teams") ?? new();
@@ -45,10 +68,9 @@ namespace PromotorSelection.Pages.Admin
                 TopicsCount = promotors.Sum(p => p.Topics?.Count ?? 0);
 
                 // Status harmonogramu/systemu (API: GET api/Schedules)
-                // zwraca { IsActive, Message }
                 ScheduleStatus = await client.GetFromJsonAsync<ScheduleStatusDto>("api/Schedules");
 
-                BuildAlerts(students, promotors, TopicsCount);
+                BuildAlerts(students, promotors, TopicsCount, ScheduleStatus);
             }
             catch (Exception ex)
             {
@@ -57,9 +79,33 @@ namespace PromotorSelection.Pages.Admin
             }
         }
 
-        private void BuildAlerts(List<StudentDto> students, List<PromotorDto> promotors, int topicsCount)
+        private void BuildAlerts(
+            List<StudentDto> students,
+            List<PromotorDto> promotors,
+            int topicsCount,
+            ScheduleStatusDto? schedule)
         {
             Alerts = new List<AlertItem>();
+
+            // Alert: brak harmonogramu
+            if (schedule is null || schedule.StartDate is null || schedule.EndDate is null)
+            {
+                Alerts.Add(AlertItem.Warning(
+                    title: "Brak ustawionego harmonogramu",
+                    details: "Ustaw datê rozpoczêcia i zakoñczenia wyborów w zak³adce „Harmonogram”."
+                ));
+            }
+            else
+            {
+                // Alert: daty niepoprawne (defensywnie)
+                if (schedule.StartDate >= schedule.EndDate)
+                {
+                    Alerts.Add(AlertItem.Danger(
+                        title: "Niepoprawny harmonogram",
+                        details: "Data rozpoczêcia jest póŸniejsza lub równa dacie zakoñczenia."
+                    ));
+                }
+            }
 
             // Alert 1: brak studentów
             if (students.Count == 0)
@@ -89,7 +135,6 @@ namespace PromotorSelection.Pages.Admin
             }
 
             // Alert 4: za ma³o miejsc u promotorów vs liczba studentów
-            // (w backendowym DTO StudentLimit jest int, ale tu zostawiamy nullable, ¿eby nie wywala³o jakby przysz³o inaczej)
             var totalSeats = promotors.Sum(p => p.StudentLimit ?? 0);
             if (promotors.Count > 0 && students.Count > 0 && totalSeats > 0 && totalSeats < students.Count)
             {
@@ -117,12 +162,8 @@ namespace PromotorSelection.Pages.Admin
 
         public class PromotorDto
         {
-            // w backendzie PromotorDto ma UserId, ale nie zaszkodzi jeœli nie u¿ywamy
             public int UserId { get; set; }
-
             public int? StudentLimit { get; set; }
-
-            // KLUCZOWE: /api/Promotors zwraca Topics
             public List<TopicDto> Topics { get; set; } = new();
         }
 
@@ -143,6 +184,9 @@ namespace PromotorSelection.Pages.Admin
         {
             public bool IsActive { get; set; }
             public string? Message { get; set; }
+
+            public DateTime? StartDate { get; set; }
+            public DateTime? EndDate { get; set; }
         }
 
         public record AlertItem(string Level, string Title, string Details)

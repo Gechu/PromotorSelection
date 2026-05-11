@@ -67,7 +67,26 @@
                             @(Model.ScheduleStatus.IsActive ? "Aktywne" : "Nieaktywne")
                         </span>
                     </div>
-                    <div>@(Model.ScheduleStatus.Message ?? "—")</div>
+
+                    <div class="mb-2">@((Model.ScheduleStatus.Message ?? "—"))</div>
+
+                    <dl class="row mb-0">
+                        <dt class="col-5 text-muted">Start</dt>
+                        <dd class="col-7">
+                            @(Model.ScheduleStatus.StartDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")
+                        </dd>
+
+                        <dt class="col-5 text-muted">Koniec</dt>
+                        <dd class="col-7">
+                            @(Model.ScheduleStatus.EndDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")
+                        </dd>
+
+                        @if (Model.ScheduleStatus.IsActive && Model.TimeToEndDisplay is not null)
+                        {
+                            <dt class="col-5 text-muted">Pozostało</dt>
+                            <dd class="col-7">@Model.TimeToEndDisplay</dd>
+                        }
+                    </dl>
 
                     <div class="mt-3">
                         <a class="btn btn-outline-primary" asp-page="/Admin/Schedule">Przejdź do harmonogramu</a>
