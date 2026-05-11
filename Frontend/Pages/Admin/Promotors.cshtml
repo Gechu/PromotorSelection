@@ -5,7 +5,8 @@
     ViewData["Title"] = "Lista promotorów";
 }
 
-<h1 class="mb-3">Lista promotorów</h1>
+<h1 class="mb-2">Lista promotorów</h1>
+<p class="text-muted">Zarządzanie promotorami (dodawanie, edycja, usuwanie) oraz podgląd tematów.</p>
 
 @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
 {
@@ -16,6 +17,112 @@
     <div class="alert alert-danger">@Model.ErrorMessage</div>
 }
 
+<!-- Panel akcji -->
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-primary"
+       asp-page="/Admin/Promotors"
+       asp-route-Q="@Model.Q"
+       asp-route-Sort="@Model.Sort"
+       asp-route-Dir="@Model.Dir"
+       asp-route-FormMode="create">
+        Dodaj promotora
+    </a>
+</div>
+
+@if (Model.FormMode is not null)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            @if (Model.FormMode == "create")
+            {
+                <span>Dodaj promotora</span>
+            }
+            else
+            {
+                <span>Edytuj promotora (UserId: @Model.Form.UserId)</span>
+            }
+        </div>
+
+        <div class="card-body">
+            <form method="post" asp-page-handler="Save" class="row g-3">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" name="Q" value="@Model.Q" />
+                <input type="hidden" name="Sort" value="@Model.Sort" />
+                <input type="hidden" name="Dir" value="@Model.Dir" />
+
+                <input type="hidden" name="FormMode" value="@Model.FormMode" />
+                <input type="hidden" asp-for="Form.UserId" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Imię</label>
+                    <input class="form-control" asp-for="Form.FirstName" />
+                    <span class="text-danger" asp-validation-for="Form.FirstName"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Nazwisko</label>
+                    <input class="form-control" asp-for="Form.LastName" />
+                    <span class="text-danger" asp-validation-for="Form.LastName"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Email</label>
+                    <input class="form-control" asp-for="Form.Email" />
+                    <span class="text-danger" asp-validation-for="Form.Email"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Limit studentów</label>
+                    <input class="form-control"
+                           asp-for="Form.StudentLimit"
+                           type="number"
+                           min="0"
+                           step="1" />
+                    <span class="text-danger" asp-validation-for="Form.StudentLimit"></span>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">
+                        Hasło
+                        @if (Model.FormMode == "edit")
+                        {
+                            <span class="text-muted">(opcjonalnie)</span>
+                        }
+                    </label>
+                    <input class="form-control" asp-for="Form.Password" type="password" autocomplete="new-password" />
+                    <div class="form-text">
+                        @if (Model.FormMode == "create")
+                        {
+                            <span>Wymagane przy dodawaniu promotora.</span>
+                        }
+                        else
+                        {
+                            <span>Zostaw puste, aby nie zmieniać hasła.</span>
+                        }
+                    </div>
+                    <span class="text-danger" asp-validation-for="Form.Password"></span>
+                </div>
+
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-success">Zapisz</button>
+
+                    <a class="btn btn-outline-secondary"
+                       asp-page="/Admin/Promotors"
+                       asp-route-Q="@Model.Q"
+                       asp-route-Sort="@Model.Sort"
+                       asp-route-Dir="@Model.Dir">
+                        Anuluj
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+<!-- Filtr / sort -->
 <form method="get" id="promotorsFilterForm" class="row g-2 align-items-end mb-3">
     <div class="col-12 col-md-10">
         <label class="form-label">Szukaj</label>
@@ -48,7 +155,11 @@
         text-decoration: none;
         font-weight: 600;
     }
-    .sort-link:hover { text-decoration: underline; }
+
+        .sort-link:hover {
+            text-decoration: underline;
+        }
+
     .sort-icon {
         display: inline-block;
         width: 1.2em;
@@ -57,9 +168,13 @@
         margin-left: .25rem;
     }
 
-    /* klikany wiersz */
-    tr.promotor-row { cursor: pointer; }
-    tr.promotor-row:hover { background: rgba(0,0,0,.03); }
+    tr.promotor-row {
+        cursor: pointer;
+    }
+
+        tr.promotor-row:hover {
+            background: rgba(0,0,0,.03);
+        }
 </style>
 
 @if (Model.Promotors.Count == 0)
@@ -96,7 +211,8 @@ else
                     </a>
                 </th>
 
-                <th style="width: 220px;">Akcje</th>
+                <th>Tematy</th>
+                <th style="width: 260px;">Akcje</th>
             </tr>
         </thead>
 
@@ -104,50 +220,40 @@ else
             @foreach (var p in Model.Promotors)
             {
                 var detailsId = $"topics-{p.UserId}";
-                <tr class="promotor-row" data-userid="@p.UserId" data-details="@detailsId">
+
+                <tr class="promotor-row" data-details="@detailsId">
                     <td>@p.UserId</td>
                     <td>@p.LastName</td>
                     <td>@p.FirstName</td>
                     <td>@p.Email</td>
+                    <td class="text-end">@p.StudentLimit</td>
+                    <td><span class="badge bg-secondary">Tematy: @p.Topics.Count</span></td>
 
-                    <td class="text-end">
-                        <span class="limit-view">@p.StudentLimit</span>
+                    <td class="d-flex gap-2">
+                        <a class="btn btn-outline-primary btn-sm"
+                           asp-page="/Admin/Promotors"
+                           asp-route-Q="@Model.Q"
+                           asp-route-Sort="@Model.Sort"
+                           asp-route-Dir="@Model.Dir"
+                           asp-route-FormMode="edit"
+                           asp-route-Id="@p.UserId">
+                            Edytuj
+                        </a>
 
-                        <form method="post"
-                              asp-page-handler="UpdateLimit"
-                              class="limit-edit d-none mt-1"
-                              style="min-width: 170px;">
+                        <form method="post" asp-page-handler="Delete"
+                              onsubmit="return confirm('Usunąć promotora (UserId: @p.UserId)? Operacja jest nieodwracalna.');">
                             @Html.AntiForgeryToken()
-
-                            <input type="hidden" name="UserId" value="@p.UserId" />
-                            <input type="hidden" name="FirstName" value="@p.FirstName" />
-                            <input type="hidden" name="LastName" value="@p.LastName" />
-                            <input type="hidden" name="Email" value="@p.Email" />
-
-                            <div class="input-group input-group-sm">
-                                <input class="form-control"
-                                       name="NewLimit"
-                                       type="number"
-                                       step="1"
-                                       min="0"
-                                       value="@p.StudentLimit" />
-                                <button class="btn btn-success" type="submit">Zapisz</button>
-                            </div>
-
-                            <button type="button" class="btn btn-link btn-sm p-0 mt-1 cancel-limit">Anuluj</button>
+                            <input type="hidden" name="Id" value="@p.UserId" />
+                            <input type="hidden" name="Q" value="@Model.Q" />
+                            <input type="hidden" name="Sort" value="@Model.Sort" />
+                            <input type="hidden" name="Dir" value="@Model.Dir" />
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Usuń</button>
                         </form>
-                    </td>
-
-                    <td>
-                        <button type="button" class="btn btn-outline-primary btn-sm start-limit">
-                            Edytuj limit
-                        </button>
-                        <span class="badge bg-secondary ms-2">Tematy: @p.Topics.Count</span>
                     </td>
                 </tr>
 
                 <tr id="@detailsId" class="d-none">
-                    <td colspan="6">
+                    <td colspan="7">
                         <div class="p-3 border rounded bg-light">
                             <div class="fw-semibold mb-2">Tematy promotora</div>
 
@@ -183,7 +289,6 @@ else
         const form = document.getElementById('promotorsFilterForm');
         const input = document.getElementById('qInput');
 
-        // live search + focus po reloadzie
         if (form && input) {
             window.addEventListener('load', () => {
                 input.focus({ preventScroll: true });
@@ -204,47 +309,9 @@ else
             row.classList.toggle('d-none');
         }
 
-        function showLimitEdit(mainRow) {
-            mainRow.querySelector('.limit-view')?.classList.add('d-none');
-            mainRow.querySelector('.limit-edit')?.classList.remove('d-none');
-            mainRow.querySelector('.start-limit')?.classList.add('d-none');
-
-            const input = mainRow.querySelector('input[name="NewLimit"]');
-            if (input) {
-                input.focus({ preventScroll: true });
-                input.select();
-            }
-        }
-
-        function hideLimitEdit(mainRow) {
-            mainRow.querySelector('.limit-view')?.classList.remove('d-none');
-            mainRow.querySelector('.limit-edit')?.classList.add('d-none');
-            mainRow.querySelector('.start-limit')?.classList.remove('d-none');
-        }
-
         document.addEventListener('click', function (e) {
-            // Edycja limitu
-            const startBtn = e.target.closest('.start-limit');
-            if (startBtn) {
-                e.stopPropagation();
-                const row = startBtn.closest('tr');
-                if (row) showLimitEdit(row);
-                return;
-            }
+            if (e.target.closest('a, button, input, select, textarea, form')) return;
 
-            const cancelBtn = e.target.closest('.cancel-limit');
-            if (cancelBtn) {
-                e.stopPropagation();
-                const row = cancelBtn.closest('tr');
-                if (row) hideLimitEdit(row);
-                return;
-            }
-
-            // Nie rozwijaj tematów, gdy klikamy wewnątrz formularza (np. input/submit)
-            if (e.target.closest('form')) return;
-            if (e.target.closest('button')) return;
-
-            // Rozwijanie tematów po kliknięciu w wiersz promotora
             const promotorRow = e.target.closest('tr.promotor-row');
             if (promotorRow) {
                 const detailsId = promotorRow.getAttribute('data-details');
@@ -253,3 +320,7 @@ else
         });
     })();
 </script>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

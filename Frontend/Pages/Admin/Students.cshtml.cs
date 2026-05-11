@@ -19,19 +19,19 @@ namespace PromotorSelection.Pages.Admin
             _logger = logger;
         }
 
-        // Query params
-        [BindProperty(SupportsGet = true)]
-        public string? Q { get; set; }
+        // Query params (lista)
+        [BindProperty(SupportsGet = true)] public string? Q { get; set; }
+        [BindProperty(SupportsGet = true)] public string Sort { get; set; } = "lastName";
+        [BindProperty(SupportsGet = true)] public string Dir { get; set; } = "asc";
 
-        [BindProperty(SupportsGet = true)]
-        public string Sort { get; set; } = "lastName"; // lastName | grade | team
+        // Panel edycji/dodawania
+        [BindProperty(SupportsGet = true)] public string? FormMode { get; set; } // null | create | edit
+        [BindProperty(SupportsGet = true)] public int? Id { get; set; } // dla edit
 
-        [BindProperty(SupportsGet = true)]
-        public string Dir { get; set; } = "asc"; // asc | desc
+        [BindProperty] public StudentForm Form { get; set; } = new();
 
         public List<StudentDto> Students { get; private set; } = new();
 
-        // Statystyki dla nagłówka
         public int TotalCount { get; private set; }
         public int FilteredCount { get; private set; }
         public int SoloCount { get; private set; }
@@ -42,21 +42,232 @@ namespace PromotorSelection.Pages.Admin
 
         public async Task OnGetAsync()
         {
-            var client = _httpClientFactory.CreateClient("BackendAPI");
+            await LoadListAsync();
 
-            var all = await client.GetFromJsonAsync<List<StudentDto>>("api/Students")
-                      ?? new List<StudentDto>();
+            // Prefill formularza w trybie edit
+            if (string.Equals(FormMode, "edit", StringComparison.OrdinalIgnoreCase) && Id.HasValue)
+            {
+                var s = Students.FirstOrDefault(x => x.UserId == Id.Value);
+                if (s == null)
+                {
+                    ErrorMessage = "Nie znaleziono studenta do edycji.";
+                    FormMode = null;
+                    return;
+                }
+
+                Form = new StudentForm
+                {
+                    UserId = s.UserId,
+                    FirstName = s.FirstName,
+                    LastName = s.LastName,
+                    Email = s.Email,
+                    AlbumNumber = s.AlbumNumber,
+                    GradeAverageText = s.GradeAverage.ToString("0.00", CultureInfo.InvariantCulture),
+                    Password = string.Empty
+                };
+            }
+            else if (string.Equals(FormMode, "create", StringComparison.OrdinalIgnoreCase))
+            {
+                Form = new StudentForm(); // pusty
+            }
+            else
+            {
+                FormMode = null; // sanity
+            }
+        }
+
+        public async Task<IActionResult> OnPostSaveAsync(
+            [FromForm] string? formMode,
+            [FromForm] string? q,
+            [FromForm] string? sort,
+            [FromForm] string? dir)
+        {
+            // zachowaj query-string listy
+            Q = q;
+            Sort = sort ?? Sort;
+            Dir = dir ?? Dir;
+
+            formMode = (formMode ?? "").Trim().ToLowerInvariant();
+
+            if (formMode != "create" && formMode != "edit")
+            {
+                ErrorMessage = "Niepoprawny tryb formularza.";
+                return RedirectToPage(new { Q, Sort, Dir });
+            }
+
+            // minimalna walidacja wymaganych pól
+            if (string.IsNullOrWhiteSpace(Form.FirstName) ||
+                string.IsNullOrWhiteSpace(Form.LastName) ||
+                string.IsNullOrWhiteSpace(Form.Email) ||
+                string.IsNullOrWhiteSpace(Form.AlbumNumber))
+            {
+                ErrorMessage = "Uzupełnij: imię, nazwisko, email i nr albumu.";
+                return RedirectToPage(new { Q, Sort, Dir, FormMode = formMode, Id = (formMode == "edit" ? (int?)Form.UserId : null) });
+            }
+
+            // GradeAverage: optional (puste = null => przy edycji backend zostawi stare)
+            double? gradeAverage = null;
+            if (!string.IsNullOrWhiteSpace(Form.GradeAverageText))
+            {
+                var raw = Form.GradeAverageText.Trim().Replace(',', '.');
+                if (!double.TryParse(raw, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var g))
+                {
+                    ErrorMessage = "Nie udało się odczytać średniej. Wpisz np. 4.56 lub 4,56.";
+                    return RedirectToPage(new { Q, Sort, Dir, FormMode = formMode, Id = (formMode == "edit" ? (int?)Form.UserId : null) });
+                }
+
+                // zgodnie z walidacją w UI i typowym zakresem w PL
+                if (g is < 2.0 or > 5.5)
+                {
+                    ErrorMessage = "Średnia musi być w zakresie 2.0 – 5.5.";
+                    return RedirectToPage(new { Q, Sort, Dir, FormMode = formMode, Id = (formMode == "edit" ? (int?)Form.UserId : null) });
+                }
+
+                gradeAverage = g;
+            }
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient("BackendAPI");
+
+                if (formMode == "create")
+                {
+                    if (string.IsNullOrWhiteSpace(Form.Password))
+                    {
+                        ErrorMessage = "Hasło jest wymagane przy dodawaniu studenta.";
+                        return RedirectToPage(new { Q, Sort, Dir, FormMode = "create" });
+                    }
+
+                    var payload = new
+                    {
+                        firstName = Form.FirstName.Trim(),
+                        lastName = Form.LastName.Trim(),
+                        email = Form.Email.Trim(),
+                        password = Form.Password,
+                        roleId = 1,
+                        albumNumber = Form.AlbumNumber.Trim(),
+                        studentLimit = (int?)null
+                    };
+
+                    var resp = await client.PostAsJsonAsync("api/Users", payload);
+
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        SuccessMessage = "Dodano studenta.";
+                        return RedirectToPage(new { Q, Sort, Dir });
+                    }
+
+                    ErrorMessage = resp.StatusCode == HttpStatusCode.BadRequest
+                        ? "Backend odrzucił żądanie (BadRequest). Sprawdź dane (email/nr albumu/hasło)."
+                        : $"Nie udało się dodać studenta (HTTP {(int)resp.StatusCode}).";
+                    return RedirectToPage(new { Q, Sort, Dir, FormMode = "create" });
+                }
+                else // edit
+                {
+                    if (Form.UserId <= 0)
+                    {
+                        ErrorMessage = "Brak UserId do edycji.";
+                        return RedirectToPage(new { Q, Sort, Dir });
+                    }
+
+                    var payload = new
+                    {
+                        userId = Form.UserId,
+                        firstName = Form.FirstName.Trim(),
+                        lastName = Form.LastName.Trim(),
+                        email = Form.Email.Trim(),
+                        password = string.IsNullOrWhiteSpace(Form.Password) ? (string?)null : Form.Password,
+                        albumNumber = Form.AlbumNumber.Trim(),
+                        gradeAverage = gradeAverage,
+                        studentLimit = (int?)null
+                    };
+
+                    var resp = await client.PutAsJsonAsync($"api/Users/{Form.UserId}", payload);
+
+                    if (resp.StatusCode == HttpStatusCode.NoContent)
+                    {
+                        SuccessMessage = "Zapisano zmiany.";
+                        return RedirectToPage(new { Q, Sort, Dir });
+                    }
+
+                    if (resp.StatusCode == HttpStatusCode.NotFound)
+                    {
+                        ErrorMessage = "Nie znaleziono użytkownika do aktualizacji.";
+                        return RedirectToPage(new { Q, Sort, Dir });
+                    }
+
+                    ErrorMessage = resp.StatusCode == HttpStatusCode.BadRequest
+                        ? "Backend odrzucił żądanie (BadRequest). Sprawdź dane (np. zajęty email/nr albumu)."
+                        : $"Błąd zapisu (HTTP {(int)resp.StatusCode}).";
+                    return RedirectToPage(new { Q, Sort, Dir, FormMode = "edit", Id = Form.UserId });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Błąd podczas zapisu studenta (mode={Mode}, userId={UserId})", formMode, Form.UserId);
+                ErrorMessage = "Wystąpił błąd podczas zapisu.";
+                return RedirectToPage(new { Q, Sort, Dir, FormMode = formMode, Id = (formMode == "edit" ? (int?)Form.UserId : null) });
+            }
+        }
+
+        public async Task<IActionResult> OnPostDeleteAsync([FromForm] int id, [FromForm] string? q, [FromForm] string? sort, [FromForm] string? dir)
+        {
+            Q = q;
+            Sort = sort ?? Sort;
+            Dir = dir ?? Dir;
+
+            if (id <= 0)
+            {
+                ErrorMessage = "Niepoprawne ID do usunięcia.";
+                return RedirectToPage(new { Q, Sort, Dir });
+            }
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient("BackendAPI");
+                var resp = await client.DeleteAsync($"api/Users/{id}");
+
+                if (resp.StatusCode == HttpStatusCode.NoContent)
+                {
+                    SuccessMessage = "Usunięto studenta.";
+                    return RedirectToPage(new { Q, Sort, Dir });
+                }
+
+                if (resp.StatusCode == HttpStatusCode.NotFound)
+                {
+                    ErrorMessage = "Nie znaleziono użytkownika do usunięcia.";
+                    return RedirectToPage(new { Q, Sort, Dir });
+                }
+
+                // Nie pokazujemy surowego JSON
+                ErrorMessage = resp.StatusCode == HttpStatusCode.BadRequest
+                    ? "Nie można usunąć studenta (np. posiada już przydział)."
+                    : $"Nie udało się usunąć studenta (HTTP {(int)resp.StatusCode}).";
+
+                return RedirectToPage(new { Q, Sort, Dir });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Błąd podczas usuwania studenta (UserId={UserId})", id);
+                ErrorMessage = "Wystąpił błąd podczas usuwania studenta.";
+                return RedirectToPage(new { Q, Sort, Dir });
+            }
+        }
+
+        private async Task LoadListAsync()
+        {
+            var client = _httpClientFactory.CreateClient("BackendAPI");
+            var all = await client.GetFromJsonAsync<List<StudentDto>>("api/Students") ?? new();
 
             TotalCount = all.Count;
 
             IEnumerable<StudentDto> query = all;
 
-            // --- FILTER ---
+            // FILTER
             if (!string.IsNullOrWhiteSpace(Q))
             {
                 var q = Q.Trim();
 
-                // jeśli wpisano liczbę, filtruj też po UserId/TeamId
                 bool qIsInt = int.TryParse(q, NumberStyles.Integer, CultureInfo.InvariantCulture, out var qInt);
 
                 query = query.Where(s =>
@@ -68,15 +279,13 @@ namespace PromotorSelection.Pages.Admin
                 );
             }
 
-            // --- STATS on filtered ---
             var filteredList = query.ToList();
             FilteredCount = filteredList.Count;
 
-            // TeamId: 0 - brak zespołu, >0 - id zespołu
             SoloCount = filteredList.Count(s => s.TeamId == 0);
             InTeamCount = filteredList.Count(s => s.TeamId != 0);
 
-            // --- SORT ---
+            // SORT
             bool desc = string.Equals(Dir, "desc", StringComparison.OrdinalIgnoreCase);
 
             query = Sort switch
@@ -97,97 +306,11 @@ namespace PromotorSelection.Pages.Admin
             Students = query.ToList();
         }
 
-        public async Task<IActionResult> OnPostUpdateGradeAsync([FromForm] UpdateGradeForm form)
-        {
-            // zachowaj query-string po zapisie (żeby nie resetowało filtra/sortowania)
-            var redirect = RedirectToPage(new { Q, Sort, Dir });
-
-            // Minimalna walidacja wymaganych pól (UpdateUserCommand ich wymaga)
-            if (form.UserId <= 0 ||
-                string.IsNullOrWhiteSpace(form.FirstName) ||
-                string.IsNullOrWhiteSpace(form.LastName) ||
-                string.IsNullOrWhiteSpace(form.Email))
-            {
-                ErrorMessage = "Niepoprawne dane formularza.";
-                return redirect;
-            }
-
-            // Ręczne parsowanie średniej (akceptuj 4,56 i 4.56)
-            var raw = (form.NewGrade ?? "").Trim();
-            if (string.IsNullOrWhiteSpace(raw))
-            {
-                ErrorMessage = "Podaj wartość średniej.";
-                return redirect;
-            }
-
-            raw = raw.Replace(',', '.');
-
-            if (!double.TryParse(raw, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var newGrade))
-            {
-                ErrorMessage = "Nie udało się odczytać średniej. Wpisz np. 4.56 lub 4,56.";
-                return redirect;
-            }
-
-            // walidacja jak w backendzie (UpdateGradeCommandValidator 2.0-5.5)
-            if (newGrade is < 2.0 or > 5.5)
-            {
-                ErrorMessage = "Średnia musi być w zakresie 2.0 – 5.5.";
-                return redirect;
-            }
-
-            try
-            {
-                var client = _httpClientFactory.CreateClient("BackendAPI");
-
-                var payload = new
-                {
-                    userId = form.UserId,
-                    firstName = form.FirstName,
-                    lastName = form.LastName,
-                    email = form.Email,
-                    password = (string?)null,
-                    albumNumber = form.AlbumNumber,
-                    gradeAverage = newGrade,     // <- tu idzie już sparsowany double
-                    studentLimit = (int?)null
-                };
-
-                var resp = await client.PutAsJsonAsync($"api/Users/{form.UserId}", payload);
-
-                if (resp.StatusCode == HttpStatusCode.NoContent)
-                {
-                    SuccessMessage = "Zapisano nową średnią.";
-                    return redirect;
-                }
-
-                if (resp.StatusCode == HttpStatusCode.BadRequest)
-                {
-                    ErrorMessage = "Backend odrzucił żądanie (BadRequest). Sprawdź dane.";
-                    return redirect;
-                }
-
-                if (resp.StatusCode == HttpStatusCode.NotFound)
-                {
-                    ErrorMessage = "Nie znaleziono użytkownika do aktualizacji.";
-                    return redirect;
-                }
-
-                var text = await resp.Content.ReadAsStringAsync();
-                ErrorMessage = $"Błąd zapisu (HTTP {(int)resp.StatusCode}). {text}";
-                return redirect;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Błąd podczas aktualizacji średniej studenta (UserId={UserId})", form.UserId);
-                ErrorMessage = "Wystąpił błąd podczas zapisu średniej.";
-                return redirect;
-            }
-        }
-
         private static bool ContainsCI(string? value, string q)
             => !string.IsNullOrWhiteSpace(value) &&
                value.Contains(q, StringComparison.OrdinalIgnoreCase);
 
-        // DTO na potrzeby widoku
+        // DTO do widoku
         public class StudentDto
         {
             public int UserId { get; set; }
@@ -199,17 +322,23 @@ namespace PromotorSelection.Pages.Admin
             public int TeamId { get; set; }
         }
 
-        public class UpdateGradeForm
+        public class StudentForm
         {
-            public int UserId { get; set; }
+            public int UserId { get; set; } // 0 dla create
+
             public string FirstName { get; set; } = string.Empty;
             public string LastName { get; set; } = string.Empty;
             public string Email { get; set; } = string.Empty;
+
             public string AlbumNumber { get; set; } = string.Empty;
-            public string? NewGrade { get; set; }
+
+            // trzymamy jako string, żeby akceptować 4,56 i 4.56
+            public string? GradeAverageText { get; set; }
+
+            public string? Password { get; set; }
         }
 
-        // Pomocnicze: do generowania linków sortowania w widoku
+        // do linków sortowania
         public string NextDir(string sort)
         {
             if (string.Equals(Sort, sort, StringComparison.OrdinalIgnoreCase))

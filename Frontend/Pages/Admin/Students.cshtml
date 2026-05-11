@@ -5,7 +5,8 @@
     ViewData["Title"] = "Lista studentów";
 }
 
-<h1 class="mb-3">Lista studentów</h1>
+<h1 class="mb-2">Lista studentów</h1>
+<p class="text-muted">Zarządzanie studentami (dodawanie, edycja, usuwanie) oraz podgląd danych.</p>
 
 @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
 {
@@ -16,6 +17,124 @@
     <div class="alert alert-danger">@Model.ErrorMessage</div>
 }
 
+<!-- Panel akcji -->
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-primary"
+       asp-page="/Admin/Students"
+       asp-route-Q="@Model.Q"
+       asp-route-Sort="@Model.Sort"
+       asp-route-Dir="@Model.Dir"
+       asp-route-FormMode="create">
+        Dodaj studenta
+    </a>
+
+    <button class="btn btn-outline-secondary" disabled title="TODO: w kolejnym kroku podpinamy import CSV">
+        Wczytaj z CSV (wkrótce)
+    </button>
+</div>
+
+@if (Model.FormMode is not null)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            @if (Model.FormMode == "create")
+            {
+                <span>Dodaj studenta</span>
+            }
+            else
+            {
+                <span>Edytuj studenta (UserId: @Model.Form.UserId)</span>
+            }
+        </div>
+
+        <div class="card-body">
+            <form method="post" asp-page-handler="Save" class="row g-3">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" name="Q" value="@Model.Q" />
+                <input type="hidden" name="Sort" value="@Model.Sort" />
+                <input type="hidden" name="Dir" value="@Model.Dir" />
+
+                <input type="hidden" name="FormMode" value="@Model.FormMode" />
+                <input type="hidden" asp-for="Form.UserId" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Imię</label>
+                    <input class="form-control" asp-for="Form.FirstName" />
+                    <span class="text-danger" asp-validation-for="Form.FirstName"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Nazwisko</label>
+                    <input class="form-control" asp-for="Form.LastName" />
+                    <span class="text-danger" asp-validation-for="Form.LastName"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Email</label>
+                    <input class="form-control" asp-for="Form.Email" />
+                    <span class="text-danger" asp-validation-for="Form.Email"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Nr albumu</label>
+                    <input class="form-control" asp-for="Form.AlbumNumber" />
+                    <span class="text-danger" asp-validation-for="Form.AlbumNumber"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Średnia</label>
+                    <input class="form-control"
+                           asp-for="Form.GradeAverageText"
+                           placeholder="np. 4.56"
+                           inputmode="decimal" />
+                    <div class="form-text">Akceptuje zapis 4.56 i 4,56. Puste = nie zmieniaj (przy edycji).</div>
+                    <span class="text-danger" asp-validation-for="Form.GradeAverageText"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">
+                        Hasło
+                        @if (Model.FormMode == "edit")
+                        {
+                            <span class="text-muted">(opcjonalnie)</span>
+                        }
+                    </label>
+                    <input class="form-control" asp-for="Form.Password" type="password" autocomplete="new-password" />
+                    <div class="form-text">
+                        @if (Model.FormMode == "create")
+                        {
+                            <span>Wymagane przy dodawaniu.</span>
+                        }
+                        else
+                        {
+                            <span>Zostaw puste, aby nie zmieniać hasła.</span>
+                        }
+                    </div>
+                    <span class="text-danger" asp-validation-for="Form.Password"></span>
+                </div>
+
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-success">
+                        Zapisz
+                    </button>
+
+                    <a class="btn btn-outline-secondary"
+                       asp-page="/Admin/Students"
+                       asp-route-Q="@Model.Q"
+                       asp-route-Sort="@Model.Sort"
+                       asp-route-Dir="@Model.Dir">
+                        Anuluj
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+<!-- Filtr / sort -->
 <form method="get" id="studentsFilterForm" class="row g-2 align-items-end mb-3">
     <div class="col-12 col-md-10">
         <label class="form-label">Szukaj</label>
@@ -45,7 +164,6 @@
 </div>
 
 <style>
-    /* nagłówki sortowania */
     .sort-link {
         color: inherit;
         text-decoration: none;
@@ -117,42 +235,14 @@ else
         <tbody>
             @foreach (var s in Model.Students)
             {
-                <tr data-row="@s.UserId">
+                <tr>
                     <td>@s.UserId</td>
                     <td>@s.LastName</td>
                     <td>@s.FirstName</td>
                     <td>@s.Email</td>
                     <td>@s.AlbumNumber</td>
 
-                    <td class="text-end">
-                        <span class="grade-view">@s.GradeAverage.ToString("0.00")</span>
-
-                        <form method="post"
-                              asp-page-handler="UpdateGrade"
-                              class="grade-edit d-none mt-1"
-                              style="min-width: 170px;">
-                            @Html.AntiForgeryToken()
-
-                            <input type="hidden" name="UserId" value="@s.UserId" />
-                            <input type="hidden" name="FirstName" value="@s.FirstName" />
-                            <input type="hidden" name="LastName" value="@s.LastName" />
-                            <input type="hidden" name="Email" value="@s.Email" />
-                            <input type="hidden" name="AlbumNumber" value="@s.AlbumNumber" />
-
-                            <div class="input-group input-group-sm">
-                                <input class="form-control"
-                                       name="NewGrade"
-                                       type="number"
-                                       step="0.01"
-                                       min="2.0"
-                                       max="5.5"
-                                       value="@s.GradeAverage.ToString("0.00")" />
-                                <button class="btn btn-success" type="submit">Zapisz</button>
-                            </div>
-
-                            <button type="button" class="btn btn-link btn-sm p-0 mt-1 cancel-edit">Anuluj</button>
-                        </form>
-                    </td>
+                    <td class="text-end">@s.GradeAverage.ToString("0.00")</td>
 
                     <td>
                         @if (s.TeamId == 0)
@@ -165,10 +255,28 @@ else
                         }
                     </td>
 
-                    <td>
-                        <button type="button" class="btn btn-outline-primary btn-sm start-edit">
-                            Edytuj średnią
-                        </button>
+                    <td class="d-flex gap-2">
+                        <a class="btn btn-outline-primary btn-sm"
+                           asp-page="/Admin/Students"
+                           asp-route-Q="@Model.Q"
+                           asp-route-Sort="@Model.Sort"
+                           asp-route-Dir="@Model.Dir"
+                           asp-route-FormMode="edit"
+                           asp-route-Id="@s.UserId">
+                            Edytuj
+                        </a>
+
+                        <form method="post" asp-page-handler="Delete"
+                              onsubmit="return confirm('Usunąć studenta (UserId: @s.UserId)? Operacja jest nieodwracalna.');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Id" value="@s.UserId" />
+                            <input type="hidden" name="Q" value="@Model.Q" />
+                            <input type="hidden" name="Sort" value="@Model.Sort" />
+                            <input type="hidden" name="Dir" value="@Model.Dir" />
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                Usuń
+                            </button>
+                        </form>
                     </td>
                 </tr>
             }
@@ -181,7 +289,6 @@ else
         const form = document.getElementById('studentsFilterForm');
         const input = document.getElementById('qInput');
 
-        // live search + focus po reloadzie
         if (form && input) {
             window.addEventListener('load', () => {
                 input.focus({ preventScroll: true });
@@ -195,39 +302,9 @@ else
                 t = setTimeout(() => form.requestSubmit(), 250);
             });
         }
-
-        function showEdit(row) {
-            row.querySelector('.grade-view')?.classList.add('d-none');
-            row.querySelector('.grade-edit')?.classList.remove('d-none');
-            row.querySelector('.start-edit')?.classList.add('d-none');
-
-            const gradeInput = row.querySelector('input[name="NewGrade"]');
-            if (gradeInput) {
-                gradeInput.focus({ preventScroll: true });
-                gradeInput.select();
-            }
-        }
-
-        function hideEdit(row) {
-            row.querySelector('.grade-view')?.classList.remove('d-none');
-            row.querySelector('.grade-edit')?.classList.add('d-none');
-            row.querySelector('.start-edit')?.classList.remove('d-none');
-        }
-
-        document.addEventListener('click', function (e) {
-            const startBtn = e.target.closest('.start-edit');
-            if (startBtn) {
-                const row = startBtn.closest('tr');
-                if (row) showEdit(row);
-                return;
-            }
-
-            const cancelBtn = e.target.closest('.cancel-edit');
-            if (cancelBtn) {
-                const row = cancelBtn.closest('tr');
-                if (row) hideEdit(row);
-                return;
-            }
-        });
     })();
 </script>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
