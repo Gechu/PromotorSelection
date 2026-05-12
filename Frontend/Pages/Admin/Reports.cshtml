@@ -101,38 +101,114 @@
     </div>
 </div>
 
-<!-- 3) Eksport -->
-<div class="row g-3 mt-1">
-    <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header">Eksport raportów</div>
-            <div class="card-body">
-                <p class="mb-3">
-                    Raporty PDF i Excel są generowane na podstawie wyników przydziału (Assignments).
-                    Jeśli przydział nie został uruchomiony, raport może być pusty.
-                </p>
+<!-- 3) Statystyki (po przydziale) -->
+@if (Model.Stats is not null)
+{
+    <div class="row g-3 mt-1">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">Statystyki (po przydziale)</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <div class="border rounded p-3">
+                                <div class="text-muted">Liczba zespołów</div>
+                                <div class="fs-3 fw-semibold">@Model.Stats.TotalTeams</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="border rounded p-3">
+                                <div class="text-muted">Studenci solo</div>
+                                <div class="fs-3 fw-semibold">@Model.Stats.FreelancersCount</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="border rounded p-3">
+                                <div class="text-muted">Studenci bez preferencji</div>
+                                <div class="fs-3 fw-semibold">@Model.Stats.IdleStudentsCount</div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="d-flex flex-wrap gap-2">
-                    <a class="btn btn-danger"
-                       asp-page="/Admin/Reports"
-                       asp-page-handler="Pdf">
-                        Pobierz PDF (.pdf)
-                    </a>
+                    <hr />
 
-                    <a class="btn btn-success"
-                       asp-page="/Admin/Reports"
-                       asp-page-handler="Excel">
-                        Pobierz Excel (.xlsx)
-                    </a>
-                </div>
+                    <div class="fw-semibold mb-2">Zainteresowanie promotorami (na podstawie preferencji)</div>
 
-                <hr />
+                    @if (Model.Stats.PromotorOccupancy is null || Model.Stats.PromotorOccupancy.Count == 0)
+                    {
+                        <div class="text-muted">Brak danych o promotorach.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Promotor</th>
+                                        <th class="text-end">Limit</th>
+                                        <th class="text-end">Ilu studentów wybrało</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var p in Model.Stats.PromotorOccupancy
+                                                                .OrderByDescending(x => x.InterestedStudentsCount)
+                                                                .ThenBy(x => x.LastName)
+                                                                .ThenBy(x => x.FirstName))
+                                    {
+                                        <tr>
+                                            <td>@p.LastName @p.FirstName <span class="text-muted">(@p.PromotorId)</span></td>
+                                            <td class="text-end">@p.StudentLimit</td>
+                                            <td class="text-end">@p.InterestedStudentsCount</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
 
-                <div class="small text-muted">
-                    Excel zawiera: (1) listę wszystkich studentów z przypisanym promotorem, (2) podsumowanie obłożenia promotorów (limit/zajęte/wolne).
-                    PDF zawiera analogiczne podsumowanie i listę.
+                    <div class="small text-muted mt-2">
+                        Uwaga: to są statystyki zainteresowania z preferencji, a nie wynik finalnego przydziału.
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+}
+
+<!-- 4) Eksport (dopiero po przydziale => po pokazaniu statystyk) -->
+@if (Model.Stats is not null)
+{
+    <div class="row g-3 mt-1">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">Eksport raportów</div>
+                <div class="card-body">
+                    <p class="mb-3">
+                        Raporty PDF i Excel są generowane na podstawie wyników przydziału (Assignments).
+                    </p>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-danger"
+                           asp-page="/Admin/Reports"
+                           asp-page-handler="Pdf">
+                            Pobierz PDF (.pdf)
+                        </a>
+
+                        <a class="btn btn-success"
+                           asp-page="/Admin/Reports"
+                           asp-page-handler="Excel">
+                            Pobierz Excel (.xlsx)
+                        </a>
+                    </div>
+
+                    <hr />
+
+                    <div class="small text-muted">
+                        Excel zawiera: (1) listę wszystkich studentów z przypisanym promotorem, (2) podsumowanie obłożenia promotorów (limit/zajęte/wolne).
+                        PDF zawiera analogiczne podsumowanie i listę.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

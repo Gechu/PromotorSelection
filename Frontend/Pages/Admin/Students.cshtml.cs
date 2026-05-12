@@ -1,7 +1,9 @@
 ﻿using System.Globalization;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -76,6 +78,80 @@ namespace PromotorSelection.Pages.Admin
             }
         }
 
+        // ===== IMPORT CSV (wywołuje backend: POST /api/Students, multipart/form-data, pole "file") =====
+        public async Task<IActionResult> OnPostImportCsvAsync(
+            IFormFile file,
+            [FromForm] string? q,
+            [FromForm] string? sort,
+            [FromForm] string? dir)
+        {
+            Q = q;
+            Sort = sort ?? Sort;
+            Dir = dir ?? Dir;
+
+            var redirect = RedirectToPage(new { Q, Sort, Dir });
+
+            if (file == null || file.Length == 0)
+            {
+                ErrorMessage = "Wybierz plik CSV do importu.";
+                return redirect;
+            }
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient("BackendAPI");
+
+                using var form = new MultipartFormDataContent();
+
+                await using var stream = file.OpenReadStream();
+                using var fileContent = new StreamContent(stream);
+
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType ?? "text/csv");
+
+                // WAŻNE: nazwa pola "file" musi się zgadzać z backendem
+                form.Add(fileContent, "file", file.FileName);
+
+                var resp = await client.PostAsync("api/Students", form);
+
+                if (resp.IsSuccessStatusCode)
+                {
+                    int imported = 0;
+                    try
+                    {
+                        imported = await resp.Content.ReadFromJsonAsync<int>();
+                    }
+                    catch
+                    {
+                        // ignore (fallback)
+                    }
+
+                    SuccessMessage = imported > 0
+                        ? $"Zaimportowano {imported} studentów z pliku CSV."
+                        : "Import zakończony. Nie dodano nowych studentów (prawdopodobnie duplikaty email/nr albumu).";
+
+                    return redirect;
+                }
+
+                if (resp.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var text = await resp.Content.ReadAsStringAsync();
+                    ErrorMessage = string.IsNullOrWhiteSpace(text)
+                        ? "Backend odrzucił import (BadRequest). Sprawdź format CSV."
+                        : $"Import odrzucony: {text}";
+                    return redirect;
+                }
+
+                ErrorMessage = $"Nie udało się zaimportować CSV (HTTP {(int)resp.StatusCode}).";
+                return redirect;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Błąd podczas importu studentów z CSV.");
+                ErrorMessage = "Wystąpił błąd podczas importu CSV.";
+                return redirect;
+            }
+        }
+
         public async Task<IActionResult> OnPostSaveAsync(
             [FromForm] string? formMode,
             [FromForm] string? q,
@@ -116,7 +192,6 @@ namespace PromotorSelection.Pages.Admin
                     return RedirectToPage(new { Q, Sort, Dir, FormMode = formMode, Id = (formMode == "edit" ? (int?)Form.UserId : null) });
                 }
 
-                // zgodnie z walidacją w UI i typowym zakresem w PL
                 if (g is < 2.0 or > 5.5)
                 {
                     ErrorMessage = "Średnia musi być w zakresie 2.0 – 5.5.";
@@ -239,7 +314,6 @@ namespace PromotorSelection.Pages.Admin
                     return RedirectToPage(new { Q, Sort, Dir });
                 }
 
-                // Nie pokazujemy surowego JSON
                 ErrorMessage = resp.StatusCode == HttpStatusCode.BadRequest
                     ? "Nie można usunąć studenta (np. posiada już przydział)."
                     : $"Nie udało się usunąć studenta (HTTP {(int)resp.StatusCode}).";
@@ -267,7 +341,6 @@ namespace PromotorSelection.Pages.Admin
             if (!string.IsNullOrWhiteSpace(Q))
             {
                 var q = Q.Trim();
-
                 bool qIsInt = int.TryParse(q, NumberStyles.Integer, CultureInfo.InvariantCulture, out var qInt);
 
                 query = query.Where(s =>

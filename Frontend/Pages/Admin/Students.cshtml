@@ -6,7 +6,7 @@
 }
 
 <h1 class="mb-2">Lista studentów</h1>
-<p class="text-muted">Zarządzanie studentami (dodawanie, edycja, usuwanie) oraz podgląd danych.</p>
+<p class="text-muted">Zarządzanie studentami (dodawanie, edycja, usuwanie) oraz import z CSV.</p>
 
 @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
 {
@@ -18,7 +18,7 @@
 }
 
 <!-- Panel akcji -->
-<div class="d-flex flex-wrap gap-2 mb-3">
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
     <a class="btn btn-primary"
        asp-page="/Admin/Students"
        asp-route-Q="@Model.Q"
@@ -28,10 +28,63 @@
         Dodaj studenta
     </a>
 
-    <button class="btn btn-outline-secondary" disabled title="TODO: w kolejnym kroku podpinamy import CSV">
-        Wczytaj z CSV (wkrótce)
-    </button>
+    <!-- IMPORT CSV -->
+    <form id="csvImportForm"
+          method="post"
+          asp-page-handler="ImportCsv"
+          enctype="multipart/form-data"
+          class="d-inline">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" name="Q" value="@Model.Q" />
+        <input type="hidden" name="Sort" value="@Model.Sort" />
+        <input type="hidden" name="Dir" value="@Model.Dir" />
+
+        <!-- WAŻNE: name="file" -->
+        <input id="csvFileInput"
+               type="file"
+               name="file"
+               accept=".csv,text/csv"
+               class="d-none" />
+
+        <button id="csvPickBtn" type="button" class="btn btn-outline-secondary">
+            Wczytaj z CSV
+        </button>
+
+        <span id="csvFileName" class="text-muted small ms-2 d-none"></span>
+    </form>
 </div>
+
+<div class="text-muted small mb-3">
+    CSV z nagłówkiem: <code>FirstName,LastName,Email,AlbumNumber,GradeAverage</code>
+</div>
+
+<script>
+    (function () {
+        const form = document.getElementById('csvImportForm');
+        const input = document.getElementById('csvFileInput');
+        const btn = document.getElementById('csvPickBtn');
+        const label = document.getElementById('csvFileName');
+
+        if (!form || !input || !btn) return;
+
+        btn.addEventListener('click', () => input.click());
+
+        input.addEventListener('change', () => {
+            if (!input.files || input.files.length === 0) return;
+
+            const file = input.files[0];
+
+            if (label) {
+                label.textContent = file.name;
+                label.classList.remove('d-none');
+            }
+
+            // auto-submit po wybraniu pliku
+            form.requestSubmit();
+        });
+    })();
+</script>
 
 @if (Model.FormMode is not null)
 {
@@ -63,25 +116,21 @@
                 <div class="col-12 col-md-6">
                     <label class="form-label">Imię</label>
                     <input class="form-control" asp-for="Form.FirstName" />
-                    <span class="text-danger" asp-validation-for="Form.FirstName"></span>
                 </div>
 
                 <div class="col-12 col-md-6">
                     <label class="form-label">Nazwisko</label>
                     <input class="form-control" asp-for="Form.LastName" />
-                    <span class="text-danger" asp-validation-for="Form.LastName"></span>
                 </div>
 
                 <div class="col-12 col-md-6">
                     <label class="form-label">Email</label>
                     <input class="form-control" asp-for="Form.Email" />
-                    <span class="text-danger" asp-validation-for="Form.Email"></span>
                 </div>
 
                 <div class="col-12 col-md-6">
                     <label class="form-label">Nr albumu</label>
                     <input class="form-control" asp-for="Form.AlbumNumber" />
-                    <span class="text-danger" asp-validation-for="Form.AlbumNumber"></span>
                 </div>
 
                 <div class="col-12 col-md-6">
@@ -91,7 +140,6 @@
                            placeholder="np. 4.56"
                            inputmode="decimal" />
                     <div class="form-text">Akceptuje zapis 4.56 i 4,56. Puste = nie zmieniaj (przy edycji).</div>
-                    <span class="text-danger" asp-validation-for="Form.GradeAverageText"></span>
                 </div>
 
                 <div class="col-12 col-md-6">
@@ -113,7 +161,6 @@
                             <span>Zostaw puste, aby nie zmieniać hasła.</span>
                         }
                     </div>
-                    <span class="text-danger" asp-validation-for="Form.Password"></span>
                 </div>
 
                 <div class="col-12 d-flex gap-2">

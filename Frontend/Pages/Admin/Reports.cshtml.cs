@@ -19,11 +19,11 @@ namespace PromotorSelection.Pages.Admin
 
         public ScheduleStatusDto? Status { get; private set; }
 
-        [TempData]
-        public string? SuccessMessage { get; set; }
+        // NOWE: statystyki systemowe
+        public StatisticsDto? Stats { get; private set; }
 
-        [TempData]
-        public string? ErrorMessage { get; set; }
+        [TempData] public string? SuccessMessage { get; set; }
+        [TempData] public string? ErrorMessage { get; set; }
 
         public bool HasSchedule
             => Status?.StartDate is not null && Status?.EndDate is not null;
@@ -57,10 +57,10 @@ namespace PromotorSelection.Pages.Admin
         public async Task OnGetAsync()
         {
             await LoadStatusAsync();
+            await LoadStatsAsync();
         }
 
         // ===== Przydzia³ =====
-
         public async Task<IActionResult> OnPostRunAllocationAsync()
         {
             await LoadStatusAsync();
@@ -85,11 +85,15 @@ namespace PromotorSelection.Pages.Admin
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Uruchomiono przydzia³. Mo¿esz teraz wygenerowaæ raport PDF/XLSX.";
-                    return RedirectToPage();
+                    SuccessMessage = "Uruchomiono przydzia³. Poni¿ej statystyki oraz eksport PDF/XLSX.";
+
+                    // NOWE: po przydziale od razu pobierz statystyki
+                    await LoadStatsAsync();
+
+                    // Zwracamy Page(), ¿eby od razu pokazaæ sekcjê statystyk.
+                    return Page();
                 }
 
-                // Nie pokazujemy surowego JSON z backendu
                 ErrorMessage = "Nie uda³o siê uruchomiæ przydzia³u. Spróbuj ponownie póŸniej (lub sprawdŸ logi backendu).";
                 return Page();
             }
@@ -102,14 +106,11 @@ namespace PromotorSelection.Pages.Admin
         }
 
         // ===== Eksporty (proxy przez frontend) =====
-
         public async Task<IActionResult> OnGetPdfAsync()
         {
             try
             {
                 var client = _httpClientFactory.CreateClient("BackendAPI");
-
-                // pobieramy jako bytes i zwracamy z frontu jako plik
                 var bytes = await client.GetByteArrayAsync("api/Report/pdf");
 
                 var fileName = $"Raport_Przydzialow_{DateTime.Now:yyyyMMdd}.pdf";
@@ -128,13 +129,14 @@ namespace PromotorSelection.Pages.Admin
             try
             {
                 var client = _httpClientFactory.CreateClient("BackendAPI");
-
                 var bytes = await client.GetByteArrayAsync("api/Report/excel");
 
                 var fileName = $"Raport_Przydzialow_{DateTime.Now:yyyyMMdd}.xlsx";
-                return File(bytes,
+                return File(
+                    bytes,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    fileName);
+                    fileName
+                );
             }
             catch (Exception ex)
             {
@@ -145,7 +147,6 @@ namespace PromotorSelection.Pages.Admin
         }
 
         // ===== Helpers =====
-
         private async Task LoadStatusAsync()
         {
             try
@@ -159,12 +160,45 @@ namespace PromotorSelection.Pages.Admin
             }
         }
 
+        private async Task LoadStatsAsync()
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("BackendAPI");
+                Stats = await client.GetFromJsonAsync<StatisticsDto>("api/Statistics");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "B³¹d podczas pobierania statystyk (api/Statistics).");
+                // nie blokujemy strony, ale poka¿emy alert
+                ErrorMessage ??= "Nie uda³o siê pobraæ statystyk po przydziale.";
+            }
+        }
+
         public class ScheduleStatusDto
         {
             public bool IsActive { get; set; }
             public string? Message { get; set; }
             public DateTime? StartDate { get; set; }
             public DateTime? EndDate { get; set; }
+        }
+
+        // DTO pod /api/Statistics
+        public class StatisticsDto
+        {
+            public int TotalTeams { get; set; }
+            public int FreelancersCount { get; set; }
+            public int IdleStudentsCount { get; set; }
+            public List<PromotorOccupancyDto> PromotorOccupancy { get; set; } = new();
+        }
+
+        public class PromotorOccupancyDto
+        {
+            public int PromotorId { get; set; }
+            public string FirstName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
+            public int StudentLimit { get; set; }
+            public int InterestedStudentsCount { get; set; }
         }
     }
 }
