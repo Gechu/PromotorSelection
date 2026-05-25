@@ -5,5 +5,288 @@
     ViewData["Title"] = "Zespół";
 }
 
-<h1>Zespół</h1>
-<p>Tu student zobaczy swój zespół lub będzie mógł dołączyć do zespołu.</p>
+<h1 class="mb-2">Zespół</h1>
+<p class="text-muted">
+    Tutaj możesz utworzyć zespół, dołączyć do istniejącego lub opuścić swój zespół.
+    Lider zespołu wybierany jest automatycznie (najwyższa średnia).
+</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<div class="row g-3 mb-3">
+    <!-- Status tury -->
+    <div class="col-12 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header">Status tury</div>
+            <div class="card-body">
+                @if (Model.ScheduleStatus is null)
+                {
+                    <div class="text-muted">Nie udało się pobrać statusu tury.</div>
+                }
+                else
+                {
+                    <div class="mb-2">
+                        <span class="badge bg-@(Model.ScheduleStatus.IsActive ? "success" : "secondary")">
+                            @(Model.ScheduleStatus.IsActive ? "Aktywna" : "Nieaktywna")
+                        </span>
+                    </div>
+
+                    <div class="mb-3">@((Model.ScheduleStatus.Message ?? "—"))</div>
+
+                    <dl class="row mb-0">
+                        <dt class="col-5 text-muted">Start</dt>
+                        <dd class="col-7">@(Model.ScheduleStatus.StartDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+
+                        <dt class="col-5 text-muted">Koniec</dt>
+                        <dd class="col-7">@(Model.ScheduleStatus.EndDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+                    </dl>
+
+                    @if (!Model.CanEdit)
+                    {
+                        <div class="alert alert-warning mt-3 mb-0">
+                            Zmiany w zespołach są możliwe tylko w trakcie aktywnej tury.
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Mój zespół -->
+    <div class="col-12 col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header">Mój zespół</div>
+            <div class="card-body">
+                @if (Model.MyTeam is null)
+                {
+                    <div class="alert alert-info">
+                        Aktualnie nie należysz do żadnego zespołu (pracujesz indywidualnie).
+                        Możesz utworzyć zespół lub dołączyć do istniejącego.
+                    </div>
+
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-md-6">
+                            <form method="post" asp-page-handler="CreateTeam" class="d-flex gap-2 align-items-end">
+                                @Html.AntiForgeryToken()
+                                <div class="flex-grow-1">
+                                    <label class="form-label mb-1">Utwórz zespół (rozmiar 2–6)</label>
+                                    <input class="form-control"
+                                           type="number"
+                                           name="DesiredSize"
+                                           min="2"
+                                           max="6"
+                                           value="2"
+                                           disabled="@(!Model.CanEdit)" />
+                                </div>
+                                <button class="btn btn-primary" type="submit" disabled="@(!Model.CanEdit)"
+                                        onclick="return confirm('Utworzyć nowy zespół?');">
+                                    Utwórz
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <form method="post" asp-page-handler="JoinById" class="d-flex gap-2 align-items-end">
+                                @Html.AntiForgeryToken()
+                                <div class="flex-grow-1">
+                                    <label class="form-label mb-1">Dołącz do zespołu po ID</label>
+                                    <input class="form-control"
+                                           type="number"
+                                           name="TeamId"
+                                           min="1"
+                                           placeholder="np. 12"
+                                           disabled="@(!Model.CanEdit)" />
+                                </div>
+                                <button class="btn btn-outline-secondary" type="submit" disabled="@(!Model.CanEdit)"
+                                        onclick="return confirm('Dołączyć do zespołu?');">
+                                    Dołącz
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                        <span class="badge bg-primary">Team @Model.MyTeam.Id</span>
+
+                        @if (Model.MyTeam.IsClosed)
+                        {
+                            <span class="badge bg-secondary">zamknięty</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">otwarty</span>
+                        }
+
+                        <span class="text-muted">
+                            Członkowie: <strong>@Model.MyTeam.CurrentMembersCount</strong> /
+                            @if (Model.MyTeam.IsClosed)
+                            {
+                                <span>—</span>
+                            }
+                            else
+                            {
+                                <span>@Model.MyTeam.TeamSize</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped align-middle">
+                            <thead>
+                                <tr>
+                                    <th>UserId</th>
+                                    <th>Imię</th>
+                                    <th>Nazwisko</th>
+                                    <th style="width: 120px;">Rola</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var m in Model.MyTeam.Members)
+                                {
+                                    <tr>
+                                        <td>@m.UserId</td>
+                                        <td>@m.FirstName</td>
+                                        <td>@m.LastName</td>
+                                        <td>
+                                            @if (m.UserId == Model.MyTeam.LeaderId)
+                                            {
+                                                <span class="badge bg-warning text-dark">Lider</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form method="post" asp-page-handler="LeaveTeam"
+                          onsubmit="return confirm('Na pewno chcesz opuścić zespół?');">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-outline-danger" type="submit" disabled="@(!Model.CanEdit)">
+                            Opuść zespół
+                        </button>
+                    </form>
+
+                    @if (Model.IsLeader)
+                    {
+                        <div class="alert alert-info mt-3 mb-0">
+                            Jesteś liderem zespołu. Wybór preferencji promotora dokonujesz w imieniu całego zespołu:
+                            <a asp-page="/Student/Preferences" class="alert-link">przejdź do preferencji</a>.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="small text-muted mt-3">
+                            Lider jest wybierany automatycznie na podstawie najwyższej średniej w zespole.
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dostępne zespoły -->
+<div class="card shadow-sm">
+    <div class="card-header">Dostępne zespoły</div>
+    <div class="card-body">
+        <div class="small text-muted mb-2">
+            Kliknij „Dołącz”, aby wejść do zespołu. Zespoły zamknięte nie przyjmują nowych członków.
+        </div>
+
+        @if (Model.Teams.Count == 0)
+        {
+            <div class="text-muted">Brak zespołów do wyświetlenia.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Status</th>
+                            <th>Członkowie</th>
+                            <th>Lider</th>
+                            <th style="width: 120px;">Akcja</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in Model.Teams.OrderBy(x => x.Id))
+                        {
+                            var leader = t.Members.FirstOrDefault(m => m.UserId == t.LeaderId);
+
+                            <tr>
+                                <td>@t.Id</td>
+                                <td>
+                                    @if (t.IsClosed)
+                                    {
+                                        <span class="badge bg-secondary">zamknięty</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">otwarty</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="text-muted">@t.CurrentMembersCount</span>
+                                    /
+                                    @if (t.IsClosed)
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">@t.TeamSize</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (leader is null)
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@leader.LastName @leader.FirstName</span>
+                                    }
+                                </td>
+                                <td>
+                                    <form method="post" asp-page-handler="JoinTeam" class="m-0"
+                                          onsubmit="return confirm('Dołączyć do zespołu @t.Id?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="TeamId" value="@t.Id" />
+                                        <button class="btn btn-outline-primary btn-sm"
+                                                type="submit"
+                                                disabled="@(!Model.CanEdit || t.IsClosed || Model.MyTeam is not null)">
+                                            Dołącz
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.MyTeam is not null)
+            {
+                <div class="small text-muted mt-2">
+                    Aby dołączyć do innego zespołu, najpierw opuść obecny.
+                </div>
+            }
+        }
+    </div>
+</div>
