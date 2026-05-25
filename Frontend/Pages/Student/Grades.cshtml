@@ -5,5 +5,122 @@
     ViewData["Title"] = "Moja średnia";
 }
 
-<h1>Moja średnia</h1>
-<p>Tu student będzie mógł wpisać lub potwierdzić swoją średnią ocen.</p>
+<h1 class="mb-2">Moja średnia</h1>
+<p class="text-muted">
+    Wprowadź lub potwierdź swoją średnią. Zmiana jest możliwa tylko w trakcie aktywnej tury wyborów.
+</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<div class="row g-3">
+    <!-- Karta: edycja średniej -->
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Średnia</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="text-muted">Aktualna wartość w systemie</div>
+                    <div class="fs-3 fw-semibold">
+                        @(Model.CurrentGradeDisplay ?? "—")
+                    </div>
+                </div>
+
+                @if (Model.ScheduleStatus is not null && !Model.ScheduleStatus.IsActive)
+                {
+                    <div class="alert alert-warning">
+                        Edycja średniej jest wyłączona, ponieważ tura wyborów jest nieaktywna.
+                        @if (Model.ScheduleStatus.EndDate is not null)
+                        {
+                            <span>Termin zakończenia: <strong>@Model.ScheduleStatus.EndDate.Value.ToString("yyyy-MM-dd HH:mm")</strong>.</span>
+                        }
+                    </div>
+                }
+
+                <form method="post" asp-page-handler="Save" class="row g-2">
+                    @Html.AntiForgeryToken()
+
+                    <div class="col-12">
+                        <label class="form-label">Nowa średnia</label>
+                        <input class="form-control"
+                               asp-for="Form.NewGrade"
+                               inputmode="decimal"
+                               placeholder="np. 4.56"
+                               disabled="@(!Model.CanEdit)" />
+                        <div class="form-text">
+                            Zakres: 2.0–5.5. Akceptuje zapis 4.56 i 4,56.
+                        </div>
+                    </div>
+
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" disabled="@(!Model.CanEdit)">
+                            Zapisz
+                        </button>
+
+                        <a class="btn btn-outline-secondary" asp-page="/Student/Grades">
+                            Odśwież
+                        </a>
+                    </div>
+                </form>
+
+                @if (!Model.CanEdit && Model.EditBlockReason is not null)
+                {
+                    <div class="small text-muted mt-2">
+                        @Model.EditBlockReason
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Karta: informacje -->
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Informacje</div>
+            <div class="card-body">
+                @if (Model.ScheduleStatus is null)
+                {
+                    <div class="text-muted">
+                        Nie udało się pobrać statusu tury (api/Schedules).
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-2">
+                        <span class="badge bg-@(Model.ScheduleStatus.IsActive ? "success" : "secondary")">
+                            @(Model.ScheduleStatus.IsActive ? "Tura aktywna" : "Tura nieaktywna")
+                        </span>
+                    </div>
+
+                    <div class="mb-3">@((Model.ScheduleStatus.Message ?? "—"))</div>
+
+                    <dl class="row mb-0">
+                        <dt class="col-5 text-muted">Start</dt>
+                        <dd class="col-7">@(Model.ScheduleStatus.StartDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+
+                        <dt class="col-5 text-muted">Koniec</dt>
+                        <dd class="col-7">@(Model.ScheduleStatus.EndDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+                    </dl>
+                }
+
+                <hr />
+
+                <ul class="mb-0">
+                    <li>Wpisz średnią zgodną z Twoimi danymi (np. z USOS).</li>
+                    <li>System może blokować zmianę po zakończeniu tury albo po wykonaniu przydziału.</li>
+                    <li>Jeśli nie możesz edytować — sprawdź daty tury w harmonogramie.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
