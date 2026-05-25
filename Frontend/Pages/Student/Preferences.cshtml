@@ -2,8 +2,189 @@
 @model PromotorSelection.Pages.Student.PreferencesModel
 @{
     Layout = "_StudentLayout";
-    ViewData["Title"] = "Moje wybory";
+    ViewData["Title"] = "Preferencje";
 }
 
-<h1>Moje wybory</h1>
-<p>Tu student wybierze trzech promotorów w kolejności priorytetów.</p>
+<h1 class="mb-2">Preferencje promotorów</h1>
+
+<p class="text-muted mb-4">
+    Wybierz <strong>3</strong> preferowanych promotorów w kolejności priorytetu (1 = najważniejszy).
+    @if (Model.IsInTeam)
+    {
+        <span>
+            @if (Model.IsLeader)
+            {
+                <strong>Jako lider zapisujesz preferencje w imieniu całego zespołu. </strong>
+            }
+            else
+            {
+                <strong>Nie jesteś liderem — preferencje może zmieniać tylko lider zespołu. </strong>
+            }
+        </span>
+    }
+</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<div class="row g-4">
+    <!-- Lewa kolumna: formularz -->
+    <div class="col-12 col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header">Wybór preferencji</div>
+            <div class="card-body">
+                @if (Model.IsInTeam && !Model.IsLeader)
+                {
+                    <div class="alert alert-info">
+                        Preferencje zespołu może zmieniać tylko lider.
+                        Możesz natomiast podejrzeć aktualnie wybrane preferencje poniżej.
+                    </div>
+                }
+
+                <form method="post" asp-page-handler="Save" class="vstack gap-3">
+                    @Html.AntiForgeryToken()
+
+                    <div>
+                        <label class="form-label">Priorytet 1</label>
+                        <select class="form-select" asp-for="Form.P1" disabled="@(!Model.CanEdit)">
+                            <option value="">— wybierz promotora —</option>
+                            @foreach (var p in Model.PromotorsForSelect)
+                            {
+                                <option value="@p.UserId">@p.Label</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Priorytet 2</label>
+                        <select class="form-select" asp-for="Form.P2" disabled="@(!Model.CanEdit)">
+                            <option value="">— wybierz promotora —</option>
+                            @foreach (var p in Model.PromotorsForSelect)
+                            {
+                                <option value="@p.UserId">@p.Label</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Priorytet 3</label>
+                        <select class="form-select" asp-for="Form.P3" disabled="@(!Model.CanEdit)">
+                            <option value="">— wybierz promotora —</option>
+                            @foreach (var p in Model.PromotorsForSelect)
+                            {
+                                <option value="@p.UserId">@p.Label</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 pt-2">
+                        <button type="submit" class="btn btn-primary" disabled="@(!Model.CanEdit)">
+                            Zapisz preferencje
+                        </button>
+
+                        <a class="btn btn-outline-secondary" asp-page="/Student/Preferences">
+                            Odśwież
+                        </a>
+
+                        <a class="btn btn-outline-secondary" asp-page="/Student/Promotors">
+                            Zobacz promotorów
+                        </a>
+                    </div>
+
+                    <div class="small text-muted">
+                        Wymagane są 3 różne preferencje. Powtórzenia zostaną odrzucone.
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Placeholder: tu będą wyświetlane aktualnie zapisane preferencje -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header">Aktualnie wybrane preferencje</div>
+            <div class="card-body">
+                @if (Model.SelectedPreferences is null)
+                {
+                    <div class="text-muted">
+                        (Wkrótce) Tu pojawi się lista aktualnie zapisanych preferencji dla Ciebie / Twojego zespołu.
+                        Backendowy endpoint jest w trakcie przygotowania.
+                    </div>
+                }
+                else if (Model.SelectedPreferences.Count == 0)
+                {
+                    <div class="text-muted">Brak zapisanych preferencji.</div>
+                }
+                else
+                {
+                    <ol class="mb-0">
+                        @foreach (var pref in Model.SelectedPreferences.OrderBy(p => p.Priority))
+                        {
+                            <li>
+                                <strong>@pref.PromotorName</strong>
+                                <span class="text-muted">(@pref.PromotorId)</span>
+                            </li>
+                        }
+                    </ol>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Prawa kolumna: status + info -->
+    <div class="col-12 col-lg-5">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">Status tury</div>
+            <div class="card-body">
+                @if (Model.ScheduleStatus is null)
+                {
+                    <div class="text-muted">Nie udało się pobrać statusu tury.</div>
+                }
+                else
+                {
+                    <div class="mb-2">
+                        <span class="badge bg-@(Model.ScheduleStatus.IsActive ? "success" : "secondary")">
+                            @(Model.ScheduleStatus.IsActive ? "Aktywna" : "Nieaktywna")
+                        </span>
+                    </div>
+
+                    <div class="mb-3">@((Model.ScheduleStatus.Message ?? "—"))</div>
+
+                    <dl class="row mb-0">
+                        <dt class="col-5 text-muted">Start</dt>
+                        <dd class="col-7">@(Model.ScheduleStatus.StartDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+
+                        <dt class="col-5 text-muted">Koniec</dt>
+                        <dd class="col-7">@(Model.ScheduleStatus.EndDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+                    </dl>
+
+                    @if (!Model.CanEdit)
+                    {
+                        <div class="alert alert-warning mt-3 mb-0">
+                            Zmiana preferencji jest możliwa tylko w trakcie aktywnej tury.
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header">Jak to działa?</div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Wybierasz 3 promotorów w kolejności priorytetu.</li>
+                    <li>Jeśli jesteś w zespole, preferencje zapisuje lider w imieniu wszystkich.</li>
+                    <li>Zmiany są możliwe do końca aktywnej tury.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
