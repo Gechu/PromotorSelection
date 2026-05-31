@@ -1,6 +1,8 @@
 ﻿using System.Net.Http.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PromotorSelection.Pages.Student
 {
@@ -25,6 +27,29 @@ namespace PromotorSelection.Pages.Student
 
         public string GradeDisplay
             => Profile?.GradeAverage is null ? "—" : Profile.GradeAverage.Value.ToString("0.00");
+
+        public string? TimeToEndDisplay
+        {
+            get
+            {
+                if (ScheduleStatus?.EndDate is null) return null;
+
+                var now = DateTime.Now;
+                var end = ScheduleStatus.EndDate.Value;
+
+                if (now >= end) return "0m";
+
+                var diff = end - now;
+
+                if (diff.TotalDays >= 1)
+                    return $"{(int)diff.TotalDays}d {diff.Hours}h";
+
+                if (diff.TotalHours >= 1)
+                    return $"{(int)diff.TotalHours}h {diff.Minutes}m";
+
+                return $"{diff.Minutes}m";
+            }
+        }
 
         public async Task OnGetAsync()
         {
@@ -65,12 +90,12 @@ namespace PromotorSelection.Pages.Student
             }
 
             // Alert: brak/nieustawiona średnia
-            // (zakładamy, że null lub 0 oznacza “do uzupełnienia”)
+            // (zakładamy, że null lub 0 oznacza "do uzupełnienia")
             if (Profile.GradeAverage is null || Profile.GradeAverage <= 0.0001)
             {
                 Alerts.Add(AlertItem.Warning(
                     title: "Średnia nie jest ustawiona",
-                    details: "Uzupełnij lub potwierdź swoją średnią na stronie „Moja średnia”."
+                    details: "Uzupełnij lub potwierdź swoją średnią na stronie Moja średnia."
                 ));
             }
 
@@ -79,7 +104,7 @@ namespace PromotorSelection.Pages.Student
             {
                 Alerts.Add(AlertItem.Info(
                     title: "Pracujesz indywidualnie (solo)",
-                    details: "Jeśli planujesz projekt zespołowy, przejdź do zakładki „Zespół”."
+                    details: "Jeśli planujesz projekt zespołowy, przejdź do zakładki Zespół."
                 ));
             }
             else
@@ -95,7 +120,7 @@ namespace PromotorSelection.Pages.Student
             // więc nie możemy pewnie stwierdzić czy student już wybrał promotorów.
             Alerts.Add(AlertItem.Info(
                 title: "Sprawdź swoje wybory promotorów",
-                details: "Przejdź do zakładki „Moje wybory”, aby ustawić lub edytować preferencje (jeśli tura jest aktywna)."
+                details: "Przejdź do zakładki Moje wybory, aby ustawić lub edytować preferencje(jeśli tura jest aktywna)."
             ));
         }
 
@@ -120,6 +145,8 @@ namespace PromotorSelection.Pages.Student
         {
             public bool IsActive { get; set; }
             public string? Message { get; set; }
+            public DateTime? StartDate { get; set; }
+            public DateTime? EndDate { get; set; }
         }
 
         public record AlertItem(string Level, string Title, string Details)

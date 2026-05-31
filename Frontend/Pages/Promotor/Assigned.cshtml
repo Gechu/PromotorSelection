@@ -2,8 +2,80 @@
 @model PromotorSelection.Pages.Promotor.AssignedModel
 @{
     Layout = "_PromotorLayout";
-    ViewData["Title"] = "Przypisani studenci";
+    ViewData["Title"] = "Przydzieleni studenci";
 }
 
-<h1>Przypisani studenci</h1>
-<p>Tu promotor zobaczy listę studentów lub zespołów przypisanych po przydziale.</p>
+<h1 class="mb-2">Przydzieleni studenci</h1>
+<p class="text-muted mb-3">
+    Tutaj widnieje lista studentów, którzy zostali Ci przydzieleni na podstawie ich preferencji.
+</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<!-- Status przydziału -->
+<div class="alert alert-@(Model.AllocationExecuted ? "success" : "info") mb-3">
+    @if (Model.AllocationExecuted)
+    {
+        <strong>Przydział wykonany. Poniżej znajduje się lista studentów przydzielonych do Ciebie.</strong>
+        }
+    else
+    {
+        <strong>Przydział nie wykonany. Lista będzie dostępna po wykonaniu przydziału przez administratora.</strong>
+        }
+</div>
+
+<!-- Tabela przydzielonych studentów -->
+<div class="card shadow-sm">
+    <div class="card-header">Przydzieleni studenci (@Model.AssignedStudents.Count)</div>
+    <div class="card-body">
+        @if (Model.AssignedStudents.Count == 0)
+        {
+            <div class="text-muted">
+                @if (Model.AllocationExecuted)
+                {
+                    <span>Nie przydzielono Ci żadnych studentów.</span>
+                }
+                else
+                {
+                    <span>Przydział studentów będzie dostępny po jego wykonaniu.</span>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Imię i nazwisko</th>
+                            <th>Nr albumu</th>
+                            <th class="text-end">Średnia ocen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var student in Model.AssignedStudents)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@student.StudentLastName @student.StudentFirstName</td>
+                                <td>@student.AlbumNumber</td>
+                                <td class="text-end">
+                                    @if (student.GradeAverage.HasValue)
+                                    {
+                                        <span>@student.GradeAverage.Value.ToString("F2")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
