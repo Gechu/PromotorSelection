@@ -53,7 +53,6 @@ namespace PromotorSelection.Pages.Promotor
             try
             {
                 await LoadScheduleAsync();
-                await LoadPromotorDataAsync();
                 await LoadStatisticsAsync();
                 await LoadAssignedAsync();
             }
@@ -77,29 +76,6 @@ namespace PromotorSelection.Pages.Promotor
             }
         }
 
-        private async Task LoadPromotorDataAsync()
-        {
-            try
-            {
-                var client = _httpClientFactory.CreateClient("BackendAPI");
-                var promotors = await client.GetFromJsonAsync<List<PromotorDto>>("api/Promotors");
-
-                if (promotors == null || promotors.Count == 0)
-                    return;
-
-                // Szukamy zalogowanego promotora — niestety nie mamy "mnie" bezpoœrednio,
-                // wiêc bêdziemy polegaæ na statystykach gdzie ID bêdzie znane.
-                // Na razie bierzemy limit z GetCurrentUser (jeœli dostêpne) albo z pierwszego promotora.
-                // 
-                // UWAGA: To jest nieidealne — idealnie by³oby mieæ endpoint "GET /api/Promotors/me"
-                // Na razie u¿ywamy: brak, bêdziemy liczyæ z Statistics
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "B³¹d podczas pobierania danych promotora (api/Promotors).");
-            }
-        }
-
         private async Task LoadStatisticsAsync()
         {
             try
@@ -110,19 +86,15 @@ namespace PromotorSelection.Pages.Promotor
                 if (stats?.PromotorOccupancy is null || stats.PromotorOccupancy.Count == 0)
                     return;
 
-                // Wyci¹gamy z PromotorOccupancy zalogowanego promotora.
-                // WA¯NE: musimy wiedzieæ jakie jest ID zalogowanego promotora.
-                // 
-                // Problemem jest ¿e z JWT Token mo¿emy wyci¹gn¹æ sub (UserId) jako int.
-                // Zak³adamy ¿e User.FindFirst(ClaimTypes.NameIdentifier) daje nam UserId.
-
+                // Pobieramy ID zalogowanego promotora z JWT token
                 var currentUserIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (!int.TryParse(currentUserIdStr, out var currentUserId))
                 {
-                    _logger.LogWarning("Nie uda³o siê ustaliæ ID zalogowanego promocora z claims.");
+                    _logger.LogWarning("Nie uda³o siê ustaliæ ID zalogowanego promotora z claims.");
                     return;
                 }
 
+                // Szukamy statystyk dla zalogowanego promotora
                 var myOccupancy = stats.PromotorOccupancy
                     .FirstOrDefault(p => p.PromotorId == currentUserId);
 
@@ -163,15 +135,6 @@ namespace PromotorSelection.Pages.Promotor
             public string? Message { get; set; }
             public DateTime? StartDate { get; set; }
             public DateTime? EndDate { get; set; }
-        }
-
-        public class PromotorDto
-        {
-            public int UserId { get; set; }
-            public string FirstName { get; set; } = string.Empty;
-            public string LastName { get; set; } = string.Empty;
-            public string Email { get; set; } = string.Empty;
-            public int StudentLimit { get; set; }
         }
 
         public class StatisticsDto

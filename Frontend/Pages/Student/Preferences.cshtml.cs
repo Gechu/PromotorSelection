@@ -166,7 +166,7 @@ namespace PromotorSelection.Pages.Student
                     .Select(p => new PromotorSelectItem
                     {
                         UserId = p.UserId,
-                        Label = $"{p.LastName} {p.FirstName}"
+                        Label = $"{p.LastName} {p.FirstName} ({p.Email})"
                     })
                     .ToList();
             }
@@ -215,6 +215,7 @@ namespace PromotorSelection.Pages.Student
             public int UserId { get; set; }
             public string FirstName { get; set; } = string.Empty;
             public string LastName { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
         }
 
         public class PromotorSelectItem
