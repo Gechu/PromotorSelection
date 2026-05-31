@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using PromotorSelection.Services;
 
 namespace PromotorSelection.Pages.Student
 {
@@ -30,7 +31,7 @@ namespace PromotorSelection.Pages.Student
 
         public bool CanEdit => ScheduleStatus?.IsActive == true && (!IsInTeam || IsLeader);
 
-        // Placeholder pod przysz³y endpoint GET preferencji
+        // Placeholder pod przyszï¿½y endpoint GET preferencji
         public List<SelectedPreferenceItem>? SelectedPreferences { get; private set; } = null;
 
         [BindProperty] public PreferenceForm Form { get; set; } = new();
@@ -55,7 +56,7 @@ namespace PromotorSelection.Pages.Student
 
             await LoadPromotorsForSelectAsync();
 
-            // W przysz³oœci: tutaj doci¹gniemy SelectedPreferences z endpointu GET /api/Preferences (lub /api/Preferences/me)
+            // W przyszï¿½oï¿½ci: tutaj dociï¿½gniemy SelectedPreferences z endpointu GET /api/Preferences (lub /api/Preferences/me)
             SelectedPreferences = null;
         }
 
@@ -69,8 +70,8 @@ namespace PromotorSelection.Pages.Student
             if (!CanEdit)
             {
                 ErrorMessage = IsInTeam && !IsLeader
-                    ? "Tylko lider zespo³u mo¿e zapisaæ preferencje."
-                    : "Modyfikacja preferencji jest mo¿liwa tylko w trakcie aktywnej tury.";
+                    ? "Tylko lider zespoï¿½u moï¿½e zapisaï¿½ preferencje."
+                    : "Modyfikacja preferencji jest moï¿½liwa tylko w trakcie aktywnej tury.";
                 return Page();
             }
 
@@ -82,7 +83,7 @@ namespace PromotorSelection.Pages.Student
 
             if (Form.P1 == Form.P2 || Form.P1 == Form.P3 || Form.P2 == Form.P3)
             {
-                ErrorMessage = "Preferencje nie mog¹ siê powtarzaæ.";
+                ErrorMessage = "Preferencje nie mogï¿½ siï¿½ powtarzaï¿½.";
                 return Page();
             }
 
@@ -97,25 +98,17 @@ namespace PromotorSelection.Pages.Student
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = IsInTeam ? "Zapisano preferencje dla zespo³u." : "Zapisano preferencje.";
+                    SuccessMessage = IsInTeam ? "Zapisano preferencje dla zespoï¿½u." : "Zapisano preferencje.";
                     return RedirectToPage();
                 }
 
-                if (resp.StatusCode == HttpStatusCode.BadRequest ||
-                    resp.StatusCode == HttpStatusCode.NotFound)
-                {
-                    var text = await resp.Content.ReadAsStringAsync();
-                    ErrorMessage = string.IsNullOrWhiteSpace(text) ? "Backend odrzuci³ ¿¹danie." : text;
-                    return Page();
-                }
-
-                ErrorMessage = $"Nie uda³o siê zapisaæ preferencji (HTTP {(int)resp.StatusCode}).";
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 return Page();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas zapisu preferencji.");
-                ErrorMessage = "Wyst¹pi³ b³¹d podczas zapisu preferencji.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas zapisu preferencji.");
+                ErrorMessage = "Wystï¿½piï¿½ bï¿½ï¿½d podczas zapisu preferencji.";
                 return Page();
             }
         }
@@ -129,7 +122,7 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania statusu tury (api/Schedules).");
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania statusu tury (api/Schedules).");
             }
         }
 
@@ -142,7 +135,7 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania zespo³ów (api/Teams).");
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania zespoï¿½ï¿½w (api/Teams).");
             }
         }
 
@@ -172,8 +165,8 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania promotorów do selectów (api/Promotors).");
-                ErrorMessage ??= "Nie uda³o siê pobraæ listy promotorów.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania promotorï¿½w do selectï¿½w (api/Promotors).");
+                ErrorMessage ??= "Nie udaï¿½o siï¿½ pobraï¿½ listy promotorï¿½w.";
             }
         }
 
@@ -224,7 +217,7 @@ namespace PromotorSelection.Pages.Student
             public string Label { get; set; } = string.Empty;
         }
 
-        // Placeholder model pod przysz³y GET (np. /api/Preferences)
+        // Placeholder model pod przyszï¿½y GET (np. /api/Preferences)
         public class SelectedPreferenceItem
         {
             public int Priority { get; set; }

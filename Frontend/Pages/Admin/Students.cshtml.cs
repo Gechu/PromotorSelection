@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using PromotorSelection.Services;
 
 namespace PromotorSelection.Pages.Admin
 {
@@ -132,16 +133,7 @@ namespace PromotorSelection.Pages.Admin
                     return redirect;
                 }
 
-                if (resp.StatusCode == HttpStatusCode.BadRequest)
-                {
-                    var text = await resp.Content.ReadAsStringAsync();
-                    ErrorMessage = string.IsNullOrWhiteSpace(text)
-                        ? "Backend odrzucił import (BadRequest). Sprawdź format CSV."
-                        : $"Import odrzucony: {text}";
-                    return redirect;
-                }
-
-                ErrorMessage = $"Nie udało się zaimportować CSV (HTTP {(int)resp.StatusCode}).";
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 return redirect;
             }
             catch (Exception ex)
@@ -232,9 +224,7 @@ namespace PromotorSelection.Pages.Admin
                         return RedirectToPage(new { Q, Sort, Dir });
                     }
 
-                    ErrorMessage = resp.StatusCode == HttpStatusCode.BadRequest
-                        ? "Backend odrzucił żądanie (BadRequest). Sprawdź dane (email/nr albumu/hasło)."
-                        : $"Nie udało się dodać studenta (HTTP {(int)resp.StatusCode}).";
+                    ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                     return RedirectToPage(new { Q, Sort, Dir, FormMode = "create" });
                 }
                 else // edit
@@ -265,15 +255,7 @@ namespace PromotorSelection.Pages.Admin
                         return RedirectToPage(new { Q, Sort, Dir });
                     }
 
-                    if (resp.StatusCode == HttpStatusCode.NotFound)
-                    {
-                        ErrorMessage = "Nie znaleziono użytkownika do aktualizacji.";
-                        return RedirectToPage(new { Q, Sort, Dir });
-                    }
-
-                    ErrorMessage = resp.StatusCode == HttpStatusCode.BadRequest
-                        ? "Backend odrzucił żądanie (BadRequest). Sprawdź dane (np. zajęty email/nr albumu)."
-                        : $"Błąd zapisu (HTTP {(int)resp.StatusCode}).";
+                    ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                     return RedirectToPage(new { Q, Sort, Dir, FormMode = "edit", Id = Form.UserId });
                 }
             }
@@ -308,15 +290,7 @@ namespace PromotorSelection.Pages.Admin
                     return RedirectToPage(new { Q, Sort, Dir });
                 }
 
-                if (resp.StatusCode == HttpStatusCode.NotFound)
-                {
-                    ErrorMessage = "Nie znaleziono użytkownika do usunięcia.";
-                    return RedirectToPage(new { Q, Sort, Dir });
-                }
-
-                ErrorMessage = resp.StatusCode == HttpStatusCode.BadRequest
-                    ? "Nie można usunąć studenta (np. posiada już przydział)."
-                    : $"Nie udało się usunąć studenta (HTTP {(int)resp.StatusCode}).";
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
 
                 return RedirectToPage(new { Q, Sort, Dir });
             }

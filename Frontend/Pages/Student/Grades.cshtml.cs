@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using PromotorSelection.Services;
 
 namespace PromotorSelection.Pages.Student
 {
@@ -33,8 +34,8 @@ namespace PromotorSelection.Pages.Student
         {
             get
             {
-                if (ScheduleStatus is null) return "Nie uda³o siê pobraæ statusu tury — spróbuj ponownie póŸniej.";
-                if (!ScheduleStatus.IsActive) return "Edycja jest dostêpna tylko w trakcie aktywnej tury wyborów.";
+                if (ScheduleStatus is null) return "Nie udaï¿½o siï¿½ pobraï¿½ statusu tury ï¿½ sprï¿½buj ponownie pï¿½niej.";
+                if (!ScheduleStatus.IsActive) return "Edycja jest dostï¿½pna tylko w trakcie aktywnej tury wyborï¿½w.";
                 return null;
             }
         }
@@ -57,7 +58,7 @@ namespace PromotorSelection.Pages.Student
 
             if (!CanEdit)
             {
-                ErrorMessage = "Nie mo¿na zmieniæ œredniej: tura wyborów jest nieaktywna.";
+                ErrorMessage = "Nie moï¿½na zmieniï¿½ ï¿½redniej: tura wyborï¿½w jest nieaktywna.";
                 return Page();
             }
 
@@ -65,7 +66,7 @@ namespace PromotorSelection.Pages.Student
             var raw = (Form.NewGrade ?? "").Trim();
             if (string.IsNullOrWhiteSpace(raw))
             {
-                ErrorMessage = "Podaj wartoœæ œredniej.";
+                ErrorMessage = "Podaj wartoï¿½ï¿½ ï¿½redniej.";
                 return Page();
             }
 
@@ -73,13 +74,13 @@ namespace PromotorSelection.Pages.Student
 
             if (!double.TryParse(raw, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var newGrade))
             {
-                ErrorMessage = "Nie uda³o siê odczytaæ œredniej. Wpisz np. 4.56 lub 4,56.";
+                ErrorMessage = "Nie udaï¿½o siï¿½ odczytaï¿½ ï¿½redniej. Wpisz np. 4.56 lub 4,56.";
                 return Page();
             }
 
             if (newGrade is < 2.0 or > 5.5)
             {
-                ErrorMessage = "Œrednia musi byæ w zakresie 2.0 – 5.5.";
+                ErrorMessage = "ï¿½rednia musi byï¿½ w zakresie 2.0 ï¿½ 5.5.";
                 return Page();
             }
 
@@ -92,33 +93,17 @@ namespace PromotorSelection.Pages.Student
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Zapisano œredni¹.";
+                    SuccessMessage = "Zapisano ï¿½redniï¿½.";
                     return RedirectToPage();
                 }
 
-                if (resp.StatusCode == HttpStatusCode.BadRequest)
-                {
-                    // Backend czêsto zwraca czytelny komunikat
-                    var text = await resp.Content.ReadAsStringAsync();
-                    ErrorMessage = string.IsNullOrWhiteSpace(text)
-                        ? "Nie mo¿na zapisaæ œredniej (BadRequest)."
-                        : text;
-                    return Page();
-                }
-
-                if (resp.StatusCode == HttpStatusCode.NotFound)
-                {
-                    ErrorMessage = "Nie znaleziono profilu studenta.";
-                    return Page();
-                }
-
-                ErrorMessage = $"Nie uda³o siê zapisaæ œredniej (HTTP {(int)resp.StatusCode}).";
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 return Page();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas zapisu œredniej studenta.");
-                ErrorMessage = "Wyst¹pi³ b³¹d podczas zapisu œredniej.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas zapisu ï¿½redniej studenta.");
+                ErrorMessage = "Wystï¿½piï¿½ bï¿½ï¿½d podczas zapisu ï¿½redniej.";
                 return Page();
             }
         }
@@ -132,7 +117,7 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania statusu tury (api/Schedules).");
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania statusu tury (api/Schedules).");
             }
         }
 
@@ -142,14 +127,14 @@ namespace PromotorSelection.Pages.Student
             {
                 var client = _httpClientFactory.CreateClient("BackendAPI");
 
-                // Bezpieczny endpoint — pobieramy profil zalogowanego u¿ytkownika
+                // Bezpieczny endpoint ï¿½ pobieramy profil zalogowanego uï¿½ytkownika
                 var userProfile = await client.GetFromJsonAsync<UserProfileDto>("api/Account");
 
                 CurrentGrade = userProfile?.GradeAverage;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania aktualnej œredniej (api/Account).");
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania aktualnej ï¿½redniej (api/Account).");
             }
         }
 

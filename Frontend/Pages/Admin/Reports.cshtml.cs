@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using PromotorSelection.Services;
 
 namespace PromotorSelection.Pages.Admin
 {
@@ -60,20 +61,20 @@ namespace PromotorSelection.Pages.Admin
             await LoadStatsAsync();
         }
 
-        // ===== Przydzia³ =====
+        // ===== Przydziaï¿½ =====
         public async Task<IActionResult> OnPostRunAllocationAsync()
         {
             await LoadStatusAsync();
 
             if (!HasSchedule)
             {
-                ErrorMessage = "Nie mo¿na uruchomiæ przydzia³u: harmonogram nie jest ustawiony.";
+                ErrorMessage = "Nie moï¿½na uruchomiï¿½ przydziaï¿½u: harmonogram nie jest ustawiony.";
                 return Page();
             }
 
             if (!CanRunAllocation)
             {
-                ErrorMessage = "Przydzia³ mo¿na uruchomiæ dopiero po zakoñczeniu terminu wyborów.";
+                ErrorMessage = "Przydziaï¿½ moï¿½na uruchomiï¿½ dopiero po zakoï¿½czeniu terminu wyborï¿½w.";
                 return Page();
             }
 
@@ -85,22 +86,22 @@ namespace PromotorSelection.Pages.Admin
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Uruchomiono przydzia³. Poni¿ej statystyki oraz eksport PDF/XLSX.";
+                    SuccessMessage = "Uruchomiono przydziaï¿½. Poniï¿½ej statystyki oraz eksport PDF/XLSX.";
 
                     // NOWE: po przydziale od razu pobierz statystyki
                     await LoadStatsAsync();
 
-                    // Zwracamy Page(), ¿eby od razu pokazaæ sekcjê statystyk.
+                    // Zwracamy Page(), ï¿½eby od razu pokazaï¿½ sekcjï¿½ statystyk.
                     return Page();
                 }
 
-                ErrorMessage = "Nie uda³o siê uruchomiæ przydzia³u. Spróbuj ponownie póŸniej (lub sprawdŸ logi backendu).";
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 return Page();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas uruchamiania przydzia³u.");
-                ErrorMessage = "Wyst¹pi³ b³¹d podczas uruchamiania przydzia³u.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas uruchamiania przydziaï¿½u.");
+                ErrorMessage = "Wystï¿½piï¿½ bï¿½ï¿½d podczas uruchamiania przydziaï¿½u.";
                 return Page();
             }
         }
@@ -118,8 +119,8 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania raportu PDF.");
-                ErrorMessage = "Nie uda³o siê wygenerowaæ/pobraæ raportu PDF.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania raportu PDF.");
+                ErrorMessage = "Nie udaï¿½o siï¿½ wygenerowaï¿½/pobraï¿½ raportu PDF.";
                 return RedirectToPage();
             }
         }
@@ -140,8 +141,8 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania raportu Excel.");
-                ErrorMessage = "Nie uda³o siê wygenerowaæ/pobraæ raportu Excel.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania raportu Excel.");
+                ErrorMessage = "Nie udaï¿½o siï¿½ wygenerowaï¿½/pobraï¿½ raportu Excel.";
                 return RedirectToPage();
             }
         }
@@ -156,7 +157,7 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania statusu harmonogramu (api/Schedules).");
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania statusu harmonogramu (api/Schedules).");
             }
         }
 
@@ -169,9 +170,9 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania statystyk (api/Statistics).");
-                // nie blokujemy strony, ale poka¿emy alert
-                ErrorMessage ??= "Nie uda³o siê pobraæ statystyk po przydziale.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania statystyk (api/Statistics).");
+                // nie blokujemy strony, ale pokaï¿½emy alert
+                ErrorMessage ??= "Nie udaï¿½o siï¿½ pobraï¿½ statystyk po przydziale.";
             }
         }
 
