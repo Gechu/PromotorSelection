@@ -67,7 +67,7 @@ namespace PromotorSelection.Pages.Admin
                     return RedirectToPage();
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
 
                 await LoadStatusOnlyAsync();
                 return Page();
@@ -95,7 +95,7 @@ namespace PromotorSelection.Pages.Admin
                     return RedirectToPage();
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
 
                 await LoadStatusOnlyAsync();
                 return Page();

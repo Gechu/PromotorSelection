@@ -133,7 +133,7 @@ namespace PromotorSelection.Pages.Admin
                     return redirect;
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 return redirect;
             }
             catch (Exception ex)
@@ -224,7 +224,7 @@ namespace PromotorSelection.Pages.Admin
                         return RedirectToPage(new { Q, Sort, Dir });
                     }
 
-                    ErrorMessage = ErrorTranslator.Translate(resp);
+                    ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                     return RedirectToPage(new { Q, Sort, Dir, FormMode = "create" });
                 }
                 else // edit
@@ -255,7 +255,7 @@ namespace PromotorSelection.Pages.Admin
                         return RedirectToPage(new { Q, Sort, Dir });
                     }
 
-                    ErrorMessage = ErrorTranslator.Translate(resp);
+                    ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                     return RedirectToPage(new { Q, Sort, Dir, FormMode = "edit", Id = Form.UserId });
                 }
             }
@@ -290,7 +290,7 @@ namespace PromotorSelection.Pages.Admin
                     return RedirectToPage(new { Q, Sort, Dir });
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
 
                 return RedirectToPage(new { Q, Sort, Dir });
             }

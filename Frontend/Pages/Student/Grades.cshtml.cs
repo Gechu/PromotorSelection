@@ -97,7 +97,7 @@ namespace PromotorSelection.Pages.Student
                     return RedirectToPage();
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 return Page();
             }
             catch (Exception ex)

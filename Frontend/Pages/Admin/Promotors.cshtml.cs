@@ -143,7 +143,7 @@ namespace PromotorSelection.Pages.Admin
                         return RedirectToPage(new { Q, Sort, Dir });
                     }
 
-                    ErrorMessage = ErrorTranslator.Translate(resp);
+                    ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
 
                     return RedirectToPage(new { Q, Sort, Dir, FormMode = "create" });
                 }
@@ -177,7 +177,7 @@ namespace PromotorSelection.Pages.Admin
                         return RedirectToPage(new { Q, Sort, Dir });
                     }
 
-                    ErrorMessage = ErrorTranslator.Translate(resp);
+                    ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
 
                     return RedirectToPage(new { Q, Sort, Dir, FormMode = "edit", Id = Form.UserId });
                 }
@@ -213,7 +213,7 @@ namespace PromotorSelection.Pages.Admin
                     return RedirectToPage(new { Q, Sort, Dir });
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
 
                 return RedirectToPage(new { Q, Sort, Dir });
             }

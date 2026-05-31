@@ -70,7 +70,7 @@ namespace PromotorSelection.Pages.Student
                     return RedirectToPage();
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 return RedirectToPage();
             }
             catch (Exception ex)
@@ -117,7 +117,7 @@ namespace PromotorSelection.Pages.Student
                     return RedirectToPage();
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 return RedirectToPage();
             }
             catch (Exception ex)
@@ -148,7 +148,7 @@ namespace PromotorSelection.Pages.Student
                     return RedirectToPage();
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 return RedirectToPage();
             }
             catch (Exception ex)

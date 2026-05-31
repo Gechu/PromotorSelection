@@ -6,8 +6,11 @@ namespace PromotorSelection.Services
     public static class ErrorTranslator
     {
         public static string Translate(HttpResponseMessage response)
+            => TranslateAsync(response).GetAwaiter().GetResult();
+
+        public static async Task<string> TranslateAsync(HttpResponseMessage response)
         {
-            var details = ReadResponseBody(response);
+            var details = await ReadResponseBodyAsync(response);
 
             return response.StatusCode switch
             {
@@ -53,14 +56,16 @@ namespace PromotorSelection.Services
                 }
             }
 
-            return "Email już istnieje w systemie.";
+            return "Wystąpił konflikt z istniejącymi danymi.";
         }
 
-        private static string ReadResponseBody(HttpResponseMessage response)
+        private static async Task<string> ReadResponseBodyAsync(HttpResponseMessage response)
         {
             try
             {
-                var raw = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                await using var stream = await response.Content.ReadAsStreamAsync();
+                using var reader = new StreamReader(stream);
+                var raw = await reader.ReadToEndAsync();
                 return ExtractMessage(raw) ?? string.Empty;
             }
             catch
@@ -134,7 +139,7 @@ namespace PromotorSelection.Services
                         var value = item.GetString();
                         if (!string.IsNullOrWhiteSpace(value))
                         {
-                            list.Add(value!);
+                            list.Add(value);
                         }
                         continue;
                     }
@@ -154,7 +159,7 @@ namespace PromotorSelection.Services
                     }
                 }
 
-                return list.Count > 0 ? string.Join(" ", list.Distinct()) : null;
+                return list.Count > 0 ? string.Join(" ", list.Distinct(StringComparer.OrdinalIgnoreCase)) : null;
             }
 
             if (node.ValueKind == JsonValueKind.Object)
@@ -171,14 +176,14 @@ namespace PromotorSelection.Services
                                 var value = item.GetString();
                                 if (!string.IsNullOrWhiteSpace(value))
                                 {
-                                    list.Add(value!);
+                                    list.Add(value);
                                 }
                             }
                         }
                     }
                 }
 
-                return list.Count > 0 ? string.Join(" ", list.Distinct()) : null;
+                return list.Count > 0 ? string.Join(" ", list.Distinct(StringComparer.OrdinalIgnoreCase)) : null;
             }
 
             return null;
@@ -198,7 +203,7 @@ namespace PromotorSelection.Services
                 return false;
             }
 
-            value = text!;
+            value = text;
             return true;
         }
 

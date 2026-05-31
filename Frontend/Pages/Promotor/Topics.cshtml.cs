@@ -98,7 +98,7 @@ namespace PromotorSelection.Pages.Promotor
                     return RedirectToPage();
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 await LoadTopicsAsync();
                 return Page();
             }
@@ -166,7 +166,7 @@ namespace PromotorSelection.Pages.Promotor
                     return RedirectToPage();
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 await LoadTopicsAsync();
                 Form.Id = topicId;
                 IsEditMode = true;
@@ -203,7 +203,7 @@ namespace PromotorSelection.Pages.Promotor
                     return RedirectToPage();
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 return RedirectToPage();
             }
             catch (Exception ex)

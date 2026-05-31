@@ -95,7 +95,7 @@ namespace PromotorSelection.Pages.Admin
                     return Page();
                 }
 
-                ErrorMessage = ErrorTranslator.Translate(resp);
+                ErrorMessage = await ErrorTranslator.TranslateAsync(resp);
                 return Page();
             }
             catch (Exception ex)
