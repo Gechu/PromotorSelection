@@ -5,5 +5,149 @@
     ViewData["Title"] = "Panel promotora";
 }
 
-<h1>Panel promotora</h1>
-<p>Witaj w panelu promotora.</p>
+<h1 class="mb-2">Panel promotora</h1>
+<p class="text-muted">Przegląd Twojej dostępności oraz przydzielonych studentów.</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<div class="row g-3">
+    <!-- Status tury -->
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Status tury</div>
+            <div class="card-body">
+                @if (Model.ScheduleStatus is null)
+                {
+                    <div class="text-muted">Brak danych (endpoint api/Schedules nie zwrócił odpowiedzi).</div>
+                }
+                else
+                {
+                    <div class="mb-2">
+                        <span class="badge bg-@(Model.ScheduleStatus.IsActive ? "success" : "secondary")">
+                            @(Model.ScheduleStatus.IsActive ? "Aktywna" : "Nieaktywna")
+                        </span>
+                    </div>
+
+                    <div class="mb-3">@((Model.ScheduleStatus.Message ?? "—"))</div>
+
+                    <dl class="row mb-0">
+                        <dt class="col-5 text-muted">Start</dt>
+                        <dd class="col-7">@(Model.ScheduleStatus.StartDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+
+                        <dt class="col-5 text-muted">Koniec</dt>
+                        <dd class="col-7">@(Model.ScheduleStatus.EndDate?.ToString("yyyy-MM-dd HH:mm") ?? "—")</dd>
+
+                        @if (Model.ScheduleStatus.IsActive && Model.TimeToEndDisplay is not null)
+                        {
+                            <dt class="col-5 text-muted">Pozostało</dt>
+                            <dd class="col-7">@Model.TimeToEndDisplay</dd>
+                        }
+                    </dl>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Dostępność / Przegląd liczbowy -->
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Twoja dostępność</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-3">
+                            <div class="text-muted small">Limit</div>
+                            <div class="fs-3 fw-semibold">@Model.StudentLimit</div>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-3">
+                            <div class="text-muted small">Zainteresowani</div>
+                            <div class="fs-3 fw-semibold">@(Model.InterestedCount?.ToString() ?? "—")</div>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-3">
+                            <div class="text-muted small">Wolne</div>
+                            <div class="fs-3 fw-semibold">
+                                @if (Model.FreeSlots.HasValue)
+                                {
+                                    <span class="badge bg-@(Model.FreeSlots.Value > 0 ? "success" : "secondary")">
+                                        @Model.FreeSlots.Value
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <div class="border rounded p-3">
+                            <div class="text-muted small">Przydzieleni</div>
+                            <div class="fs-3 fw-semibold">@Model.AssignedCount</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pasek postępu zainteresowania -->
+                @if (Model.InterestedCount.HasValue && Model.StudentLimit > 0)
+                {
+                    var percentage = (double)Model.InterestedCount.Value / Model.StudentLimit * 100;
+                    <div class="mt-3">
+                        <div class="progress">
+                            <div class="progress-bar"
+                                 role="progressbar"
+                                 style="width: @(Math.Min(percentage, 100))%;"
+                                 aria-valuenow="@Model.InterestedCount"
+                                 aria-valuemin="0"
+                                 aria-valuemax="@Model.StudentLimit">
+                                @Model.InterestedCount / @Model.StudentLimit
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerty informacyjne -->
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        @if (Model.ScheduleStatus is not null && !Model.ScheduleStatus.IsActive)
+        {
+            <div class="alert alert-info">
+                <strong>Tura wyborów zakończona.</strong>
+                Po wykonaniu przydziału przez administratora będziesz mógł zobaczyć przydzielonych studentów.
+                <a asp-page="/Promotor/Assigned" class="alert-link">Przejdź do przydzielonych</a>.
+            </div>
+        }
+        else if (Model.ScheduleStatus is not null && Model.ScheduleStatus.IsActive)
+        {
+            <div class="alert alert-warning">
+                <strong>Tura wyborów jest aktywna.</strong>
+                Studenci mogą jeszcze modyfikować swoje preferencje.
+                Pamiętaj, aby przygotować swoje tematy w zakładce
+                <a asp-page="/Promotor/Topics" class="alert-link">Zarządzaj tematami</a>.
+            </div>
+        }
+
+        @if (Model.AssignedCount > 0)
+        {
+            <div class="alert alert-success">
+                <strong>Masz @Model.AssignedCount przydzielonych studentów!</strong>
+                Przejdź do
+                <a asp-page="/Promotor/Assigned" class="alert-link">Przydzielonych studentów</a>
+                aby zobaczyć szczegóły.
+            </div>
+        }
+    </div>
+</div>

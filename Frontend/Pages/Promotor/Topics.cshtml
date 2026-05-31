@@ -2,8 +2,159 @@
 @model PromotorSelection.Pages.Promotor.TopicsModel
 @{
     Layout = "_PromotorLayout";
-    ViewData["Title"] = "Moje tematy";
+    ViewData["Title"] = "Zarządzaj tematami";
 }
 
-<h1>Moje tematy</h1>
-<p>Tu promotor będzie mógł dodawać i edytować tematy prac dyplomowych.</p>
+<h1 class="mb-2">Zarządzaj tematami</h1>
+<p class="text-muted mb-3">
+    Tutaj możesz dodawać, edytować i usuwać tematy prac oferowane studentom.
+    Edycja jest możliwa tylko w trakcie aktywnej tury wyborów.
+</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<!-- Status tury -->
+<div class="alert alert-@(Model.CanEdit ? "info" : "warning") mb-3">
+    @if (Model.CanEdit)
+    {
+        <strong>Tura wyborów jest aktywna. Możesz edytować tematy do zakończenia tury. </strong>
+        }
+    else
+    {
+        <strong>Tura wyborów jest nieaktywna. Dodawanie i edycja tematów jest wyłączona. </strong>
+        }
+</div>
+
+<!-- Formularz: Dodaj / Edytuj temat -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        @if (Model.IsEditMode)
+        {
+            <span>Edytuj temat</span>
+        }
+        else
+        {
+            <span>Dodaj nowy temat</span>
+        }
+    </div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="@(Model.IsEditMode ? "Update" : "Create")" class="row g-3">
+            @Html.AntiForgeryToken()
+
+            @if (Model.IsEditMode)
+            {
+                <input type="hidden" name="TopicId" value="@Model.Form.Id" />
+            }
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Tytuł tematu *</label>
+                <input class="form-control"
+                       asp-for="Form.Title"
+                       maxlength="50"
+                       placeholder="np. Sztuczna inteligencja w medycynie"
+                       disabled="@(!Model.CanEdit)" />
+                <small class="form-text text-muted">Maksymalnie 50 znaków</small>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Opis (opcjonalnie)</label>
+                <input class="form-control"
+                       asp-for="Form.Description"
+                       maxlength="200"
+                       placeholder="Krótki opis tematu pracy"
+                       disabled="@(!Model.CanEdit)" />
+                <small class="form-text text-muted">Maksymalnie 200 znaków</small>
+            </div>
+
+            <div class="col-12">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" disabled="@(!Model.CanEdit)">
+                        @if (Model.IsEditMode)
+                        {
+                            <span>Zapisz zmiany</span>
+                        }
+                        else
+                        {
+                            <span>Dodaj temat</span>
+                        }
+                    </button>
+
+                    @if (Model.IsEditMode)
+                    {
+                        <a class="btn btn-outline-secondary" asp-page="/Promotor/Topics">
+                            Anuluj edycję
+                        </a>
+                    }
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista tematów -->
+<div class="card shadow-sm">
+    <div class="card-header">Moje tematy (@Model.Topics.Count)</div>
+    <div class="card-body">
+        @if (Model.Topics.Count == 0)
+        {
+            <div class="text-muted">
+                Nie dodałeś jeszcze żadnych tematów.
+                @if (Model.CanEdit)
+                {
+                    <span>Dodaj pierwszy temat za pomocą formularza powyżej.</span>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Tytuł</th>
+                            <th>Opis</th>
+                            <th style="width: 180px;">Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var topic in Model.Topics)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@topic.Title</td>
+                                <td class="text-muted">@(string.IsNullOrWhiteSpace(topic.Description) ? "—" : topic.Description)</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a class="btn btn-outline-primary"
+                                           asp-page="/Promotor/Topics"
+                                           asp-route-editId="@topic.Id"
+                                           disabled="@(!Model.CanEdit)">
+                                            Edytuj
+                                        </a>
+
+                                        <form method="post" asp-page-handler="Delete" class="d-inline"
+                                              onsubmit="return confirm('Na pewno chcesz usunąć ten temat?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="TopicId" value="@topic.Id" />
+                                            <button type="submit"
+                                                    class="btn btn-outline-danger"
+                                                    disabled="@(!Model.CanEdit)">
+                                                Usuń
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
