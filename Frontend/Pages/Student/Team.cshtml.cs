@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using PromotorSelection.Services;
 
 namespace PromotorSelection.Pages.Student
 {
@@ -50,7 +51,7 @@ namespace PromotorSelection.Pages.Student
             await LoadScheduleAsync();
             if (!CanEdit)
             {
-                ErrorMessage = "Modyfikacja zespo³u jest mo¿liwa tylko w trakcie aktywnej tury.";
+                ErrorMessage = "Modyfikacja zespoï¿½u jest moï¿½liwa tylko w trakcie aktywnej tury.";
                 return RedirectToPage();
             }
 
@@ -58,32 +59,24 @@ namespace PromotorSelection.Pages.Student
             {
                 var client = _httpClientFactory.CreateClient("BackendAPI");
 
-                // backend clampuje 2–6, ale trzymamy spójnie w UI
+                // backend clampuje 2ï¿½6, ale trzymamy spï¿½jnie w UI
                 desiredSize = Math.Clamp(desiredSize, 2, 6);
 
                 var resp = await client.PostAsJsonAsync("api/Teams/create", new { desiredSize });
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Utworzono zespó³.";
+                    SuccessMessage = "Utworzono zespï¿½.";
                     return RedirectToPage();
                 }
 
-                if (resp.StatusCode == HttpStatusCode.BadRequest)
-                {
-                    ErrorMessage = await resp.Content.ReadAsStringAsync();
-                    if (string.IsNullOrWhiteSpace(ErrorMessage))
-                        ErrorMessage = "Nie mo¿na utworzyæ zespo³u (BadRequest).";
-                    return RedirectToPage();
-                }
-
-                ErrorMessage = $"Nie uda³o siê utworzyæ zespo³u (HTTP {(int)resp.StatusCode}).";
+                ErrorMessage = ErrorTranslator.Translate(resp);
                 return RedirectToPage();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas tworzenia zespo³u.");
-                ErrorMessage = "Wyst¹pi³ b³¹d podczas tworzenia zespo³u.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas tworzenia zespoï¿½u.");
+                ErrorMessage = "Wystï¿½piï¿½ bï¿½ï¿½d podczas tworzenia zespoï¿½u.";
                 return RedirectToPage();
             }
         }
@@ -103,13 +96,13 @@ namespace PromotorSelection.Pages.Student
             await LoadScheduleAsync();
             if (!CanEdit)
             {
-                ErrorMessage = "Do³¹czanie do zespo³u jest mo¿liwe tylko w trakcie aktywnej tury.";
+                ErrorMessage = "Doï¿½ï¿½czanie do zespoï¿½u jest moï¿½liwe tylko w trakcie aktywnej tury.";
                 return RedirectToPage();
             }
 
             if (teamId <= 0)
             {
-                ErrorMessage = "Podaj poprawne ID zespo³u.";
+                ErrorMessage = "Podaj poprawne ID zespoï¿½u.";
                 return RedirectToPage();
             }
 
@@ -120,27 +113,17 @@ namespace PromotorSelection.Pages.Student
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = $"Do³¹czono do zespo³u {teamId}.";
+                    SuccessMessage = $"Doï¿½ï¿½czono do zespoï¿½u {teamId}.";
                     return RedirectToPage();
                 }
 
-                if (resp.StatusCode == HttpStatusCode.BadRequest ||
-                    resp.StatusCode == HttpStatusCode.NotFound)
-                {
-                    var text = await resp.Content.ReadAsStringAsync();
-                    ErrorMessage = string.IsNullOrWhiteSpace(text)
-                        ? "Nie uda³o siê do³¹czyæ do zespo³u."
-                        : text;
-                    return RedirectToPage();
-                }
-
-                ErrorMessage = $"Nie uda³o siê do³¹czyæ do zespo³u (HTTP {(int)resp.StatusCode}).";
+                ErrorMessage = ErrorTranslator.Translate(resp);
                 return RedirectToPage();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas do³¹czania do zespo³u (TeamId={TeamId})", teamId);
-                ErrorMessage = "Wyst¹pi³ b³¹d podczas do³¹czania do zespo³u.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas doï¿½ï¿½czania do zespoï¿½u (TeamId={TeamId})", teamId);
+                ErrorMessage = "Wystï¿½piï¿½ bï¿½ï¿½d podczas doï¿½ï¿½czania do zespoï¿½u.";
                 return RedirectToPage();
             }
         }
@@ -150,7 +133,7 @@ namespace PromotorSelection.Pages.Student
             await LoadScheduleAsync();
             if (!CanEdit)
             {
-                ErrorMessage = "Opuszczanie zespo³u jest mo¿liwe tylko w trakcie aktywnej tury.";
+                ErrorMessage = "Opuszczanie zespoï¿½u jest moï¿½liwe tylko w trakcie aktywnej tury.";
                 return RedirectToPage();
             }
 
@@ -161,27 +144,17 @@ namespace PromotorSelection.Pages.Student
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Opuszczono zespó³.";
+                    SuccessMessage = "Opuszczono zespï¿½.";
                     return RedirectToPage();
                 }
 
-                if (resp.StatusCode == HttpStatusCode.BadRequest ||
-                    resp.StatusCode == HttpStatusCode.NotFound)
-                {
-                    var text = await resp.Content.ReadAsStringAsync();
-                    ErrorMessage = string.IsNullOrWhiteSpace(text)
-                        ? "Nie uda³o siê opuœciæ zespo³u."
-                        : text;
-                    return RedirectToPage();
-                }
-
-                ErrorMessage = $"Nie uda³o siê opuœciæ zespo³u (HTTP {(int)resp.StatusCode}).";
+                ErrorMessage = ErrorTranslator.Translate(resp);
                 return RedirectToPage();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas opuszczania zespo³u.");
-                ErrorMessage = "Wyst¹pi³ b³¹d podczas opuszczania zespo³u.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas opuszczania zespoï¿½u.");
+                ErrorMessage = "Wystï¿½piï¿½ bï¿½ï¿½d podczas opuszczania zespoï¿½u.";
                 return RedirectToPage();
             }
         }
@@ -195,8 +168,8 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania zespo³ów (api/Teams).");
-                ErrorMessage ??= "Nie uda³o siê pobraæ listy zespo³ów.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania zespoï¿½ï¿½w (api/Teams).");
+                ErrorMessage ??= "Nie udaï¿½o siï¿½ pobraï¿½ listy zespoï¿½ï¿½w.";
             }
         }
 
@@ -209,7 +182,7 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania statusu tury (api/Schedules).");
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania statusu tury (api/Schedules).");
             }
         }
 

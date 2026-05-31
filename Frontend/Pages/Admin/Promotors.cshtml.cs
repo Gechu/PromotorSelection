@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using PromotorSelection.Services;
 
 namespace PromotorSelection.Pages.Admin
 {
@@ -142,9 +143,7 @@ namespace PromotorSelection.Pages.Admin
                         return RedirectToPage(new { Q, Sort, Dir });
                     }
 
-                    ErrorMessage = resp.StatusCode == HttpStatusCode.BadRequest
-                        ? "Backend odrzucił żądanie (BadRequest). Sprawdź dane (email/hasło/limit)."
-                        : $"Nie udało się dodać promotora (HTTP {(int)resp.StatusCode}).";
+                    ErrorMessage = ErrorTranslator.Translate(resp);
 
                     return RedirectToPage(new { Q, Sort, Dir, FormMode = "create" });
                 }
@@ -178,15 +177,7 @@ namespace PromotorSelection.Pages.Admin
                         return RedirectToPage(new { Q, Sort, Dir });
                     }
 
-                    if (resp.StatusCode == HttpStatusCode.NotFound)
-                    {
-                        ErrorMessage = "Nie znaleziono użytkownika do aktualizacji.";
-                        return RedirectToPage(new { Q, Sort, Dir });
-                    }
-
-                    ErrorMessage = resp.StatusCode == HttpStatusCode.BadRequest
-                        ? "Backend odrzucił żądanie (BadRequest). Sprawdź dane (np. zajęty email)."
-                        : $"Błąd zapisu (HTTP {(int)resp.StatusCode}).";
+                    ErrorMessage = ErrorTranslator.Translate(resp);
 
                     return RedirectToPage(new { Q, Sort, Dir, FormMode = "edit", Id = Form.UserId });
                 }
@@ -222,15 +213,7 @@ namespace PromotorSelection.Pages.Admin
                     return RedirectToPage(new { Q, Sort, Dir });
                 }
 
-                if (resp.StatusCode == HttpStatusCode.NotFound)
-                {
-                    ErrorMessage = "Nie znaleziono użytkownika do usunięcia.";
-                    return RedirectToPage(new { Q, Sort, Dir });
-                }
-
-                ErrorMessage = resp.StatusCode == HttpStatusCode.BadRequest
-                    ? "Nie można usunąć promotora (np. ma przypisanych studentów)."
-                    : $"Nie udało się usunąć promotora (HTTP {(int)resp.StatusCode}).";
+                ErrorMessage = ErrorTranslator.Translate(resp);
 
                 return RedirectToPage(new { Q, Sort, Dir });
             }

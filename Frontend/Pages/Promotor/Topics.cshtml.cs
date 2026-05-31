@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using PromotorSelection.Services;
 
 namespace PromotorSelection.Pages.Promotor
 {
@@ -35,7 +36,7 @@ namespace PromotorSelection.Pages.Promotor
             await LoadScheduleAsync();
             await LoadTopicsAsync();
 
-            // Jeœli editId jest podane, za³aduj ten temat do formularza
+            // Jeï¿½li editId jest podane, zaï¿½aduj ten temat do formularza
             if (editId.HasValue && editId.Value > 0)
             {
                 var topic = Topics.FirstOrDefault(t => t.Id == editId.Value);
@@ -54,27 +55,27 @@ namespace PromotorSelection.Pages.Promotor
             await LoadScheduleAsync();
             if (!CanEdit)
             {
-                ErrorMessage = "Dodawanie tematów jest mo¿liwe tylko w trakcie aktywnej tury.";
+                ErrorMessage = "Dodawanie tematï¿½w jest moï¿½liwe tylko w trakcie aktywnej tury.";
                 return RedirectToPage();
             }
 
             if (string.IsNullOrWhiteSpace(Form.Title))
             {
-                ErrorMessage = "Tytu³ tematu jest wymagany.";
+                ErrorMessage = "Tytuï¿½ tematu jest wymagany.";
                 await LoadTopicsAsync();
                 return Page();
             }
 
             if (Form.Title.Length > 50)
             {
-                ErrorMessage = "Tytu³ nie mo¿e byæ d³u¿szy ni¿ 50 znaków.";
+                ErrorMessage = "Tytuï¿½ nie moï¿½e byï¿½ dï¿½uï¿½szy niï¿½ 50 znakï¿½w.";
                 await LoadTopicsAsync();
                 return Page();
             }
 
             if (!string.IsNullOrWhiteSpace(Form.Description) && Form.Description.Length > 200)
             {
-                ErrorMessage = "Opis nie mo¿e byæ d³u¿szy ni¿ 200 znaków.";
+                ErrorMessage = "Opis nie moï¿½e byï¿½ dï¿½uï¿½szy niï¿½ 200 znakï¿½w.";
                 await LoadTopicsAsync();
                 return Page();
             }
@@ -97,22 +98,14 @@ namespace PromotorSelection.Pages.Promotor
                     return RedirectToPage();
                 }
 
-                if (resp.StatusCode == HttpStatusCode.BadRequest)
-                {
-                    var text = await resp.Content.ReadAsStringAsync();
-                    ErrorMessage = string.IsNullOrWhiteSpace(text) ? "Backend odrzuci³ ¿¹danie." : text;
-                    await LoadTopicsAsync();
-                    return Page();
-                }
-
-                ErrorMessage = $"Nie uda³o siê dodaæ tematu (HTTP {(int)resp.StatusCode}).";
+                ErrorMessage = ErrorTranslator.Translate(resp);
                 await LoadTopicsAsync();
                 return Page();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas dodawania tematu.");
-                ErrorMessage = "Wyst¹pi³ b³¹d podczas dodawania tematu.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas dodawania tematu.");
+                ErrorMessage = "Wystï¿½piï¿½ bï¿½ï¿½d podczas dodawania tematu.";
                 await LoadTopicsAsync();
                 return Page();
             }
@@ -123,13 +116,13 @@ namespace PromotorSelection.Pages.Promotor
             await LoadScheduleAsync();
             if (!CanEdit)
             {
-                ErrorMessage = "Edycja tematów jest mo¿liwa tylko w trakcie aktywnej tury.";
+                ErrorMessage = "Edycja tematï¿½w jest moï¿½liwa tylko w trakcie aktywnej tury.";
                 return RedirectToPage();
             }
 
             if (string.IsNullOrWhiteSpace(Form.Title))
             {
-                ErrorMessage = "Tytu³ tematu jest wymagany.";
+                ErrorMessage = "Tytuï¿½ tematu jest wymagany.";
                 await LoadTopicsAsync();
                 Form.Id = topicId;
                 IsEditMode = true;
@@ -138,7 +131,7 @@ namespace PromotorSelection.Pages.Promotor
 
             if (Form.Title.Length > 50)
             {
-                ErrorMessage = "Tytu³ nie mo¿e byæ d³u¿szy ni¿ 50 znaków.";
+                ErrorMessage = "Tytuï¿½ nie moï¿½e byï¿½ dï¿½uï¿½szy niï¿½ 50 znakï¿½w.";
                 await LoadTopicsAsync();
                 Form.Id = topicId;
                 IsEditMode = true;
@@ -147,7 +140,7 @@ namespace PromotorSelection.Pages.Promotor
 
             if (!string.IsNullOrWhiteSpace(Form.Description) && Form.Description.Length > 200)
             {
-                ErrorMessage = "Opis nie mo¿e byæ d³u¿szy ni¿ 200 znaków.";
+                ErrorMessage = "Opis nie moï¿½e byï¿½ dï¿½uï¿½szy niï¿½ 200 znakï¿½w.";
                 await LoadTopicsAsync();
                 Form.Id = topicId;
                 IsEditMode = true;
@@ -173,18 +166,7 @@ namespace PromotorSelection.Pages.Promotor
                     return RedirectToPage();
                 }
 
-                if (resp.StatusCode == HttpStatusCode.BadRequest ||
-                    resp.StatusCode == HttpStatusCode.NotFound)
-                {
-                    var text = await resp.Content.ReadAsStringAsync();
-                    ErrorMessage = string.IsNullOrWhiteSpace(text) ? "Backend odrzuci³ ¿¹danie." : text;
-                    await LoadTopicsAsync();
-                    Form.Id = topicId;
-                    IsEditMode = true;
-                    return Page();
-                }
-
-                ErrorMessage = $"Nie uda³o siê zaktualizowaæ tematu (HTTP {(int)resp.StatusCode}).";
+                ErrorMessage = ErrorTranslator.Translate(resp);
                 await LoadTopicsAsync();
                 Form.Id = topicId;
                 IsEditMode = true;
@@ -192,8 +174,8 @@ namespace PromotorSelection.Pages.Promotor
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas aktualizacji tematu.");
-                ErrorMessage = "Wyst¹pi³ b³¹d podczas aktualizacji tematu.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas aktualizacji tematu.");
+                ErrorMessage = "Wystï¿½piï¿½ bï¿½ï¿½d podczas aktualizacji tematu.";
                 await LoadTopicsAsync();
                 Form.Id = topicId;
                 IsEditMode = true;
@@ -206,7 +188,7 @@ namespace PromotorSelection.Pages.Promotor
             await LoadScheduleAsync();
             if (!CanEdit)
             {
-                ErrorMessage = "Usuwanie tematów jest mo¿liwe tylko w trakcie aktywnej tury.";
+                ErrorMessage = "Usuwanie tematï¿½w jest moï¿½liwe tylko w trakcie aktywnej tury.";
                 return RedirectToPage();
             }
 
@@ -217,25 +199,17 @@ namespace PromotorSelection.Pages.Promotor
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Temat usuniêty.";
+                    SuccessMessage = "Temat usuniï¿½ty.";
                     return RedirectToPage();
                 }
 
-                if (resp.StatusCode == HttpStatusCode.BadRequest ||
-                    resp.StatusCode == HttpStatusCode.NotFound)
-                {
-                    var text = await resp.Content.ReadAsStringAsync();
-                    ErrorMessage = string.IsNullOrWhiteSpace(text) ? "Backend odrzuci³ ¿¹danie." : text;
-                    return RedirectToPage();
-                }
-
-                ErrorMessage = $"Nie uda³o siê usun¹æ tematu (HTTP {(int)resp.StatusCode}).";
+                ErrorMessage = ErrorTranslator.Translate(resp);
                 return RedirectToPage();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas usuwania tematu.");
-                ErrorMessage = "Wyst¹pi³ b³¹d podczas usuwania tematu.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas usuwania tematu.");
+                ErrorMessage = "Wystï¿½piï¿½ bï¿½ï¿½d podczas usuwania tematu.";
                 return RedirectToPage();
             }
         }
@@ -249,7 +223,7 @@ namespace PromotorSelection.Pages.Promotor
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania statusu tury (api/Schedules).");
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania statusu tury (api/Schedules).");
             }
         }
 
@@ -262,8 +236,8 @@ namespace PromotorSelection.Pages.Promotor
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania tematów (api/Topics).");
-                ErrorMessage ??= "Nie uda³o siê pobraæ listy tematów.";
+                _logger.LogError(ex, "Bï¿½ï¿½d podczas pobierania tematï¿½w (api/Topics).");
+                ErrorMessage ??= "Nie udaï¿½o siï¿½ pobraï¿½ listy tematï¿½w.";
             }
         }
 
