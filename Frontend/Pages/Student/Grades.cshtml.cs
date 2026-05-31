@@ -142,21 +142,14 @@ namespace PromotorSelection.Pages.Student
             {
                 var client = _httpClientFactory.CreateClient("BackendAPI");
 
-                // Najproœciej: bierzemy bie¿¹cego studenta z listy studentów po emailu.
-                // Jeœli masz endpoint "me", to warto go u¿yæ zamiast tego.
-                var meEmail = User?.Identity?.Name;
+                // Bezpieczny endpoint — pobieramy profil zalogowanego u¿ytkownika
+                var userProfile = await client.GetFromJsonAsync<UserProfileDto>("api/Account");
 
-                var all = await client.GetFromJsonAsync<List<StudentDto>>("api/Students") ?? new();
-
-                var me = !string.IsNullOrWhiteSpace(meEmail)
-                    ? all.FirstOrDefault(s => string.Equals(s.Email, meEmail, StringComparison.OrdinalIgnoreCase))
-                    : null;
-
-                CurrentGrade = me?.GradeAverage;
+                CurrentGrade = userProfile?.GradeAverage;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B³¹d podczas pobierania aktualnej œredniej (api/Students).");
+                _logger.LogError(ex, "B³¹d podczas pobierania aktualnej œredniej (api/Account).");
             }
         }
 
@@ -174,12 +167,17 @@ namespace PromotorSelection.Pages.Student
             public DateTime? EndDate { get; set; }
         }
 
-        // minimalny DTO zgodny z tym, co zwraca api/Students (GetStudentsQuery mapuje User + Student)
-        public class StudentDto
+        // DTO zgodny z /api/Account
+        public class UserProfileDto
         {
-            public int UserId { get; set; }
+            public int Id { get; set; }
+            public string FirstName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
             public string Email { get; set; } = string.Empty;
+            public string? AlbumNumber { get; set; }
             public double? GradeAverage { get; set; }
+            public int? TeamId { get; set; }
+            public int? StudentLimit { get; set; }
         }
     }
 }
