@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using PromotorSelection.Application.Preferences;
+using PromotorSelection.Application.Dto;
 
 namespace PromotorSelection.API.Controllers;
 
@@ -17,5 +18,12 @@ public class PreferencesController : ControllerBase
     public async Task<ActionResult<bool>> SetPreferences([FromBody] SetPreferencesCommand command)
     {
         return Ok(await _mediator.Send(command));
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<List<PreferenceDto>>> GetMyPreferences()
+    {
+        var result = await _mediator.Send(new GetMyPreferencesQuery());
+        return Ok(result);
     }
 }
