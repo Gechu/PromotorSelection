@@ -104,15 +104,14 @@
             </div>
         </div>
 
-        <!-- Placeholder: tu będą wyświetlane aktualnie zapisane preferencje -->
+        <!-- Tu są wyświetlane aktualnie zapisane preferencje -->
         <div class="card shadow-sm mt-4">
             <div class="card-header">Aktualnie wybrane preferencje</div>
             <div class="card-body">
                 @if (Model.SelectedPreferences is null)
                 {
                     <div class="text-muted">
-                        (Wkrótce) Tu pojawi się lista aktualnie zapisanych preferencji dla Ciebie / Twojego zespołu.
-                        Backendowy endpoint jest w trakcie przygotowania.
+                        Nie udało się pobrać aktualnych preferencji. Spróbuj odświeżyć stronę.
                     </div>
                 }
                 else if (Model.SelectedPreferences.Count == 0)
@@ -126,7 +125,7 @@
                         {
                             <li>
                                 <strong>@pref.PromotorName</strong>
-                                <span class="text-muted">(@pref.PromotorId)</span>
+                                <span class="text-muted">(priorytet @pref.Priority)</span>
                             </li>
                         }
                     </ol>

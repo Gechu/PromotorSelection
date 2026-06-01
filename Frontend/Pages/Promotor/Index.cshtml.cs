@@ -55,6 +55,8 @@ namespace PromotorSelection.Pages.Promotor
                 await LoadScheduleAsync();
                 await LoadStatisticsAsync();
                 await LoadAssignedAsync();
+
+                FreeSlots = Math.Max(0, StudentLimit - AssignedCount);
             }
             catch (Exception ex)
             {
@@ -103,7 +105,6 @@ namespace PromotorSelection.Pages.Promotor
 
                 StudentLimit = myOccupancy.StudentLimit;
                 InterestedCount = myOccupancy.InterestedStudentsCount;
-                FreeSlots = Math.Max(0, StudentLimit - myOccupancy.InterestedStudentsCount);
             }
             catch (Exception ex)
             {
