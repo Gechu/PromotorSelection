@@ -98,13 +98,13 @@
                 <form method="post" asp-page-handler="RunAllocation"
                       onsubmit="return confirm('Na pewno uruchomić przydział? Ta operacja może nadpisać poprzednie przydziały.');">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-outline-danger">
+                    <button type="submit" class="btn btn-outline-danger" disabled="@Model.Status.IsActive">
                         Uruchom przydział
                     </button>
                 </form>
 
                 <div class="small text-muted mt-2">
-                    Backend i tak zablokuje uruchomienie przydziału, jeśli tura jeszcze trwa.
+                    Uruchomienie przydziału nie jest możliwe, jeśli tura jeszcze trwa.
                 </div>
             </div>
         </div>

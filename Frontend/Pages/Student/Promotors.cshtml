@@ -38,141 +38,135 @@
     Wyniki: <strong>@Model.FilteredCount</strong> / @Model.TotalCount
 </div>
 
-<style>
-    .sort-link { color: inherit; text-decoration: none; font-weight: 600; }
-    .sort-link:hover { text-decoration: underline; }
-    .sort-icon { display: inline-block; width: 1.2em; text-align: center; opacity: .7; margin-left: .25rem; }
-    tr.promotor-row { cursor: pointer; }
-    tr.promotor-row:hover { background: rgba(0,0,0,.03); }
-</style>
-
 @if (Model.Promotors.Count == 0)
 {
     <p>Brak promotorów do wyświetlenia.</p>
 }
 else
 {
-    <table class="table table-striped align-middle">
-        <thead>
-            <tr>
-                <th>
-                    <a class="sort-link"
-                       asp-page="/Student/Promotors"
-                       asp-route-Q="@Model.Q"
-                       asp-route-Sort="lastName"
-                       asp-route-Dir="@Model.NextDir("lastName")">
-                        Promotor <span class="sort-icon">@Model.SortIcon("lastName")</span>
-                    </a>
-                </th>
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>
+                        <a class="sort-link"
+                           asp-page="/Student/Promotors"
+                           asp-route-Q="@Model.Q"
+                           asp-route-Sort="lastName"
+                           asp-route-Dir="@Model.NextDir("lastName")">
+                            Promotor <span class="sort-icon">@Model.SortIcon("lastName")</span>
+                        </a>
+                    </th>
 
-                <th>Email</th>
+                    <th>Email</th>
 
-                <th class="text-end">
-                    <a class="sort-link"
-                       asp-page="/Student/Promotors"
-                       asp-route-Q="@Model.Q"
-                       asp-route-Sort="limit"
-                       asp-route-Dir="@Model.NextDir("limit")">
-                        Limit <span class="sort-icon">@Model.SortIcon("limit")</span>
-                    </a>
-                </th>
+                    <th class="text-end">
+                        <a class="sort-link"
+                           asp-page="/Student/Promotors"
+                           asp-route-Q="@Model.Q"
+                           asp-route-Sort="limit"
+                           asp-route-Dir="@Model.NextDir("limit")">
+                            Limit <span class="sort-icon">@Model.SortIcon("limit")</span>
+                        </a>
+                    </th>
 
-                <th class="text-end">
-                    <a class="sort-link"
-                       asp-page="/Student/Promotors"
-                       asp-route-Q="@Model.Q"
-                       asp-route-Sort="interested"
-                       asp-route-Dir="@Model.NextDir("interested")">
-                        Zainteresowanych <span class="sort-icon">@Model.SortIcon("interested")</span>
-                    </a>
-                </th>
+                    <th class="text-end">
+                        <a class="sort-link"
+                           asp-page="/Student/Promotors"
+                           asp-route-Q="@Model.Q"
+                           asp-route-Sort="interested"
+                           asp-route-Dir="@Model.NextDir("interested")">
+                            Zainteresowanych <span class="sort-icon">@Model.SortIcon("interested")</span>
+                        </a>
+                    </th>
 
-                <th class="text-end">
-                    <a class="sort-link"
-                       asp-page="/Student/Promotors"
-                       asp-route-Q="@Model.Q"
-                       asp-route-Sort="free"
-                       asp-route-Dir="@Model.NextDir("free")">
-                        Wolne <span class="sort-icon">@Model.SortIcon("free")</span>
-                    </a>
-                </th>
+                    <th class="text-end">
+                        <a class="sort-link"
+                           asp-page="/Student/Promotors"
+                           asp-route-Q="@Model.Q"
+                           asp-route-Sort="free"
+                           asp-route-Dir="@Model.NextDir("free")">
+                            Wolne <span class="sort-icon">@Model.SortIcon("free")</span>
+                        </a>
+                    </th>
 
-                <th>Tematy</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            @foreach (var p in Model.Promotors)
-            {
-                var detailsId = $"topics-{p.UserId}";
-                <tr class="promotor-row" data-details="@detailsId">
-                    <td>
-                        <div class="fw-semibold">@p.LastName @p.FirstName</div>
-                        <div class="text-muted small">UserId: @p.UserId</div>
-                    </td>
-
-                    <td>@p.Email</td>
-
-                    <td class="text-end">@p.StudentLimit</td>
-
-                    <td class="text-end">
-                        @if (p.InterestedStudentsCount.HasValue)
-                        {
-                            @p.InterestedStudentsCount
-                        }
-                        else
-                        {
-                            <span class="text-muted">—</span>
-                        }
-                    </td>
-
-                    <td class="text-end">
-                        @if (p.FreeSlots.HasValue)
-                        {
-                            var free = p.FreeSlots.Value;
-                            <span class="badge bg-@(free > 0 ? "success" : "secondary")">@free</span>
-                        }
-                        else
-                        {
-                            <span class="text-muted">—</span>
-                        }
-                    </td>
-
-                    <td>
-                        <span class="badge bg-secondary">Tematy: @p.Topics.Count</span>
-                    </td>
+                    <th>Tematy</th>
                 </tr>
+            </thead>
 
-                <tr id="@detailsId" class="d-none">
-                    <td colspan="6">
-                        <div class="p-3 border rounded bg-light">
-                            <div class="fw-semibold mb-2">Tematy promotora</div>
+            <tbody>
+                @foreach (var p in Model.Promotors)
+                {
+                    var detailsId = $"topics-{p.UserId}";
+                    <tr class="promotor-row" data-details="@detailsId">
+                        <td>
+                            <div class="fw-semibold">@p.LastName @p.FirstName</div>
+                            <div class="text-muted small">UserId: @p.UserId</div>
+                        </td>
 
-                            @if (p.Topics.Count == 0)
+                        <td>@p.Email</td>
+
+                        <td class="text-end">@p.StudentLimit</td>
+
+                        <td class="text-end">
+                            @if (p.InterestedStudentsCount.HasValue)
                             {
-                                <div class="text-muted">Brak tematów.</div>
+                                @p.InterestedStudentsCount
                             }
                             else
                             {
-                                <ul class="mb-0">
-                                    @foreach (var t in p.Topics)
-                                    {
-                                        <li class="mb-2">
-                                            <div class="fw-semibold">@t.Title</div>
-                                            @if (!string.IsNullOrWhiteSpace(t.Description))
-                                            {
-                                                <div class="text-muted">@t.Description</div>
-                                            }
-                                        </li>
-                                    }
-                                </ul>
+                                <span class="text-muted">—</span>
                             }
-                        </div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                        </td>
+
+                        <td class="text-end">
+                            @if (p.FreeSlots.HasValue)
+                            {
+                                var free = p.FreeSlots.Value;
+                                <span class="badge bg-@(free > 0 ? "success" : "secondary")">@free</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+
+                        <td>
+                            <span class="badge bg-secondary">Tematy: @p.Topics.Count</span>
+                        </td>
+                    </tr>
+
+                    <tr id="@detailsId" class="d-none">
+                        <td colspan="6">
+                            <div class="p-3 border rounded bg-light">
+                                <div class="fw-semibold mb-2">Tematy promotora</div>
+
+                                @if (p.Topics.Count == 0)
+                                {
+                                    <div class="text-muted">Brak tematów.</div>
+                                }
+                                else
+                                {
+                                    <ul class="mb-0">
+                                        @foreach (var t in p.Topics)
+                                        {
+                                            <li class="mb-2">
+                                                <div class="fw-semibold">@t.Title</div>
+                                                @if (!string.IsNullOrWhiteSpace(t.Description))
+                                                {
+                                                    <div class="text-muted">@t.Description</div>
+                                                }
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 <script>

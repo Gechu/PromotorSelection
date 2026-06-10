@@ -210,125 +210,107 @@
     | W zespole: <strong>@Model.InTeamCount</strong>
 </div>
 
-<style>
-    .sort-link {
-        color: inherit;
-        text-decoration: none;
-        font-weight: 600;
-    }
-
-        .sort-link:hover {
-            text-decoration: underline;
-        }
-
-    .sort-icon {
-        display: inline-block;
-        width: 1.2em;
-        text-align: center;
-        opacity: .7;
-        margin-left: .25rem;
-    }
-</style>
-
 @if (Model.Students.Count == 0)
 {
     <p>Brak studentów do wyświetlenia.</p>
 }
 else
 {
-    <table class="table table-striped align-middle">
-        <thead>
-            <tr>
-                <th>UserId</th>
-
-                <th>
-                    <a class="sort-link"
-                       asp-page="/Admin/Students"
-                       asp-route-Q="@Model.Q"
-                       asp-route-Sort="lastName"
-                       asp-route-Dir="@Model.NextDir("lastName")">
-                        Nazwisko <span class="sort-icon">@Model.SortIcon("lastName")</span>
-                    </a>
-                </th>
-
-                <th>Imię</th>
-                <th>Email</th>
-                <th>Nr albumu</th>
-
-                <th class="text-end">
-                    <a class="sort-link"
-                       asp-page="/Admin/Students"
-                       asp-route-Q="@Model.Q"
-                       asp-route-Sort="grade"
-                       asp-route-Dir="@Model.NextDir("grade")">
-                        Średnia <span class="sort-icon">@Model.SortIcon("grade")</span>
-                    </a>
-                </th>
-
-                <th>
-                    <a class="sort-link"
-                       asp-page="/Admin/Students"
-                       asp-route-Q="@Model.Q"
-                       asp-route-Sort="team"
-                       asp-route-Dir="@Model.NextDir("team")">
-                        Zespół <span class="sort-icon">@Model.SortIcon("team")</span>
-                    </a>
-                </th>
-
-                <th style="width: 220px;">Akcje</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            @foreach (var s in Model.Students)
-            {
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
                 <tr>
-                    <td>@s.UserId</td>
-                    <td>@s.LastName</td>
-                    <td>@s.FirstName</td>
-                    <td>@s.Email</td>
-                    <td>@s.AlbumNumber</td>
+                    <th>UserId</th>
 
-                    <td class="text-end">@s.GradeAverage.ToString("0.00")</td>
-
-                    <td>
-                        @if (s.TeamId == 0)
-                        {
-                            <span class="badge bg-secondary">solo</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-success">team @s.TeamId</span>
-                        }
-                    </td>
-
-                    <td class="d-flex gap-2">
-                        <a class="btn btn-outline-primary btn-sm"
+                    <th>
+                        <a class="sort-link"
                            asp-page="/Admin/Students"
                            asp-route-Q="@Model.Q"
-                           asp-route-Sort="@Model.Sort"
-                           asp-route-Dir="@Model.Dir"
-                           asp-route-FormMode="edit"
-                           asp-route-Id="@s.UserId">
-                            Edytuj
+                           asp-route-Sort="lastName"
+                           asp-route-Dir="@Model.NextDir("lastName")">
+                            Nazwisko <span class="sort-icon">@Model.SortIcon("lastName")</span>
                         </a>
+                    </th>
 
-                        <form method="post" asp-page-handler="Delete"
-                              onsubmit="return confirm('Usunąć studenta (UserId: @s.UserId)? Operacja jest nieodwracalna.');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="Id" value="@s.UserId" />
-                            <input type="hidden" name="Q" value="@Model.Q" />
-                            <input type="hidden" name="Sort" value="@Model.Sort" />
-                            <input type="hidden" name="Dir" value="@Model.Dir" />
-                            <button type="submit" class="btn btn-outline-danger btn-sm">
-                                Usuń
-                            </button>
-                        </form>
-                    </td>
+                    <th>Imię</th>
+                    <th>Email</th>
+                    <th>Nr albumu</th>
+
+                    <th class="text-end">
+                        <a class="sort-link"
+                           asp-page="/Admin/Students"
+                           asp-route-Q="@Model.Q"
+                           asp-route-Sort="grade"
+                           asp-route-Dir="@Model.NextDir("grade")">
+                            Średnia <span class="sort-icon">@Model.SortIcon("grade")</span>
+                        </a>
+                    </th>
+
+                    <th>
+                        <a class="sort-link"
+                           asp-page="/Admin/Students"
+                           asp-route-Q="@Model.Q"
+                           asp-route-Sort="team"
+                           asp-route-Dir="@Model.NextDir("team")">
+                            Zespół <span class="sort-icon">@Model.SortIcon("team")</span>
+                        </a>
+                    </th>
+
+                    <th style="width: 220px;">Akcje</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+
+            <tbody>
+                @foreach (var s in Model.Students)
+                {
+                    <tr>
+                        <td>@s.UserId</td>
+                        <td>@s.LastName</td>
+                        <td>@s.FirstName</td>
+                        <td>@s.Email</td>
+                        <td>@s.AlbumNumber</td>
+
+                        <td class="text-end">@s.GradeAverage.ToString("0.00")</td>
+
+                        <td>
+                            @if (s.TeamId == 0)
+                            {
+                                <span class="badge bg-secondary">solo</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">team @s.TeamId</span>
+                            }
+                        </td>
+
+                        <td class="d-flex gap-2">
+                            <a class="btn btn-outline-primary btn-sm"
+                               asp-page="/Admin/Students"
+                               asp-route-Q="@Model.Q"
+                               asp-route-Sort="@Model.Sort"
+                               asp-route-Dir="@Model.Dir"
+                               asp-route-FormMode="edit"
+                               asp-route-Id="@s.UserId">
+                                Edytuj
+                            </a>
+
+                            <form method="post" asp-page-handler="Delete"
+                                  onsubmit="return confirm('Usunąć studenta (UserId: @s.UserId)? Operacja jest nieodwracalna.');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Id" value="@s.UserId" />
+                                <input type="hidden" name="Q" value="@Model.Q" />
+                                <input type="hidden" name="Sort" value="@Model.Sort" />
+                                <input type="hidden" name="Dir" value="@Model.Dir" />
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    Usuń
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 <script>

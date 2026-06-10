@@ -34,8 +34,8 @@ namespace PromotorSelection.Pages.Student
         {
             get
             {
-                if (ScheduleStatus is null) return "Nie uda�o si� pobra� statusu tury � spr�buj ponownie p�niej.";
-                if (!ScheduleStatus.IsActive) return "Edycja jest dost�pna tylko w trakcie aktywnej tury wybor�w.";
+                if (ScheduleStatus is null) return "Nie udało się pobrać statusu tury, spróbuj ponownie później.";
+                if (!ScheduleStatus.IsActive) return "Edycja jest dostępna tylko w trakcie aktywnej tury wyborów.";
                 return null;
             }
         }
@@ -58,7 +58,7 @@ namespace PromotorSelection.Pages.Student
 
             if (!CanEdit)
             {
-                ErrorMessage = "Nie mo�na zmieni� �redniej: tura wybor�w jest nieaktywna.";
+                ErrorMessage = "Nie można zmienić średniej: tura wyborów jest nieaktywna.";
                 return Page();
             }
 
@@ -66,7 +66,7 @@ namespace PromotorSelection.Pages.Student
             var raw = (Form.NewGrade ?? "").Trim();
             if (string.IsNullOrWhiteSpace(raw))
             {
-                ErrorMessage = "Podaj warto�� �redniej.";
+                ErrorMessage = "Podaj wartość średniej.";
                 return Page();
             }
 
@@ -74,13 +74,13 @@ namespace PromotorSelection.Pages.Student
 
             if (!double.TryParse(raw, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var newGrade))
             {
-                ErrorMessage = "Nie uda�o si� odczyta� �redniej. Wpisz np. 4.56 lub 4,56.";
+                ErrorMessage = "Nie udało się odczytać średniej. Wpisz np. 4.56 lub 4,56.";
                 return Page();
             }
 
             if (newGrade is < 2.0 or > 5.5)
             {
-                ErrorMessage = "�rednia musi by� w zakresie 2.0 � 5.5.";
+                ErrorMessage = "średnia musi być w zakresie 2.0 - 5.5.";
                 return Page();
             }
 
@@ -93,7 +93,7 @@ namespace PromotorSelection.Pages.Student
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Zapisano �redni�.";
+                    SuccessMessage = "Zapisano średnią.";
                     return RedirectToPage();
                 }
 
@@ -102,8 +102,8 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas zapisu �redniej studenta.");
-                ErrorMessage = "Wyst�pi� b��d podczas zapisu �redniej.";
+                _logger.LogError(ex, "Błąd podczas zapisu średniej studenta.");
+                ErrorMessage = "Wystąpił błąd podczas zapisu średniej.";
                 return Page();
             }
         }
@@ -117,7 +117,7 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas pobierania statusu tury (api/Schedules).");
+                _logger.LogError(ex, "Błąd podczas pobierania statusu tury (api/Schedules).");
             }
         }
 
@@ -127,14 +127,14 @@ namespace PromotorSelection.Pages.Student
             {
                 var client = _httpClientFactory.CreateClient("BackendAPI");
 
-                // Bezpieczny endpoint � pobieramy profil zalogowanego u�ytkownika
+                // Bezpieczny endpoint - pobieramy profil zalogowanego użytkownika
                 var userProfile = await client.GetFromJsonAsync<UserProfileDto>("api/Account");
 
                 CurrentGrade = userProfile?.GradeAverage;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas pobierania aktualnej �redniej (api/Account).");
+                _logger.LogError(ex, "Błąd podczas pobierania aktualnej średniej (api/Account).");
             }
         }
 

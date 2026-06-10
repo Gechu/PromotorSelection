@@ -46,7 +46,7 @@ namespace PromotorSelection.Pages.Admin
             // UI-walidacja
             if (Form.StartDate >= Form.EndDate)
             {
-                ModelState.AddModelError(string.Empty, "Data rozpocz�cia musi by� wcze�niejsza ni� data zako�czenia.");
+                ModelState.AddModelError(string.Empty, "Data rozpoczęcia musi być wcześniejsza niż data zakończenia.");
                 await LoadStatusOnlyAsync();
                 return Page();
             }
@@ -63,7 +63,7 @@ namespace PromotorSelection.Pages.Admin
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Harmonogram zosta� zapisany.";
+                    SuccessMessage = "Harmonogram został zapisany.";
                     return RedirectToPage();
                 }
 
@@ -74,8 +74,8 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas zapisu harmonogramu.");
-                ErrorMessage = "Wyst�pi� b��d podczas zapisu harmonogramu.";
+                _logger.LogError(ex, "Błąd podczas zapisu harmonogramu.");
+                ErrorMessage = "Wystąpił błąd podczas zapisu harmonogramu.";
                 await LoadStatusOnlyAsync();
                 return Page();
             }
@@ -91,7 +91,7 @@ namespace PromotorSelection.Pages.Admin
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Uruchomiono przydzia�.";
+                    SuccessMessage = "Uruchomiono przydział.";
                     return RedirectToPage();
                 }
 
@@ -102,8 +102,8 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas uruchamiania przydzia�u.");
-                ErrorMessage = "Wyst�pi� b��d podczas uruchamiania przydzia�u.";
+                _logger.LogError(ex, "Błąd podczas uruchamiania przydziału.");
+                ErrorMessage = "Wystąpił błąd podczas uruchamiania przydziału.";
                 await LoadStatusOnlyAsync();
                 return Page();
             }
@@ -118,7 +118,7 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas pobierania statusu harmonogramu.");
+                _logger.LogError(ex, "Błąd podczas pobierania statusu harmonogramu.");
             }
         }
 

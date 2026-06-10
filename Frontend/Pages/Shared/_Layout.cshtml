@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - PromotorSelection</title>
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/PromotorSelection.styles.css" asp-append-version="true" />
@@ -12,7 +13,7 @@
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
+            <div class="container-lg">
                 <a class="navbar-brand" asp-page="/Index">PromotorSelection</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -25,25 +26,25 @@
                             {
                                 if (User.IsInRole("Admin"))
                                 {
-                                    <a class="nav-link text-dark" asp-page="/Admin/Index">Home (Admin)</a>
+                                    <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Index" ? "active-nav" : "")" asp-page="/Admin/Index">Home (Admin)</a>
                                 }
                                 else if (User.IsInRole("Promotor"))
                                 {
-                                    <a class="nav-link text-dark" asp-page="/Promotor/Index">Home (Promotor)</a>
+                                    <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Promotor/Index" ? "active-nav" : "")" asp-page="/Promotor/Index">Home (Promotor)</a>
                                 }
                                 else if (User.IsInRole("Student"))
                                 {
-                                    <a class="nav-link text-dark" asp-page="/Student/Index">Home (Student)</a>
+                                    <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Student/Index" ? "active-nav" : "")" asp-page="/Student/Index">Home (Student)</a>
                                 }
                             }
                             else
                             {
-                                <a class="nav-link text-dark" asp-page="/Index">Home</a>
+                                <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "active-nav" : "")" asp-page="/Index">Home</a>
                             }
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Privacy">Privacy</a>
+                            <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Privacy" ? "active-nav" : "")" asp-page="/Privacy">Privacy</a>
                         </li>
                     </ul>
 
@@ -57,14 +58,14 @@
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+    <main role="main" class="flex-grow-1 pb-3">
+        <div class="container-lg">
             @RenderBody()
-        </main>
-    </div>
+        </div>
+    </main>
 
     <footer class="border-top footer text-muted">
-        <div class="container">
+        <div class="container-lg">
             &copy; 2026 - PromotorSelection - <a asp-page="/Privacy">Privacy</a>
         </div>
     </footer>

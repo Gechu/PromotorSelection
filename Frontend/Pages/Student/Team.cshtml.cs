@@ -51,7 +51,7 @@ namespace PromotorSelection.Pages.Student
             await LoadScheduleAsync();
             if (!CanEdit)
             {
-                ErrorMessage = "Modyfikacja zespo�u jest mo�liwa tylko w trakcie aktywnej tury.";
+                ErrorMessage = "Modyfikacja zespołu jest możliwa tylko w trakcie aktywnej tury.";
                 return RedirectToPage();
             }
 
@@ -59,14 +59,14 @@ namespace PromotorSelection.Pages.Student
             {
                 var client = _httpClientFactory.CreateClient("BackendAPI");
 
-                // backend clampuje 2�6, ale trzymamy sp�jnie w UI
+                // backend clampuje 2-6, ale trzymamy spójnie w UI
                 desiredSize = Math.Clamp(desiredSize, 2, 6);
 
                 var resp = await client.PostAsJsonAsync("api/Teams/create", new { desiredSize });
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Utworzono zesp�.";
+                    SuccessMessage = "Utworzono zespół.";
                     return RedirectToPage();
                 }
 
@@ -75,8 +75,8 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas tworzenia zespo�u.");
-                ErrorMessage = "Wyst�pi� b��d podczas tworzenia zespo�u.";
+                _logger.LogError(ex, "Błąd podczas tworzenia zespołu.");
+                ErrorMessage = "Wystąpił błąd podczas tworzenia zespołu.";
                 return RedirectToPage();
             }
         }
@@ -96,13 +96,13 @@ namespace PromotorSelection.Pages.Student
             await LoadScheduleAsync();
             if (!CanEdit)
             {
-                ErrorMessage = "Do��czanie do zespo�u jest mo�liwe tylko w trakcie aktywnej tury.";
+                ErrorMessage = "Dołączanie do zespołu jest możliwe tylko w trakcie aktywnej tury.";
                 return RedirectToPage();
             }
 
             if (teamId <= 0)
             {
-                ErrorMessage = "Podaj poprawne ID zespo�u.";
+                ErrorMessage = "Podaj poprawne ID zespołu.";
                 return RedirectToPage();
             }
 
@@ -113,7 +113,7 @@ namespace PromotorSelection.Pages.Student
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = $"Do��czono do zespo�u {teamId}.";
+                    SuccessMessage = $"Dołączono do zespołu {teamId}.";
                     return RedirectToPage();
                 }
 
@@ -122,8 +122,8 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas do��czania do zespo�u (TeamId={TeamId})", teamId);
-                ErrorMessage = "Wyst�pi� b��d podczas do��czania do zespo�u.";
+                _logger.LogError(ex, "Błąd podczas dołączania do zespołu (TeamId={TeamId})", teamId);
+                ErrorMessage = "Wystąpiłą błąd podczas dołączania do zespołu.";
                 return RedirectToPage();
             }
         }
@@ -133,7 +133,7 @@ namespace PromotorSelection.Pages.Student
             await LoadScheduleAsync();
             if (!CanEdit)
             {
-                ErrorMessage = "Opuszczanie zespo�u jest mo�liwe tylko w trakcie aktywnej tury.";
+                ErrorMessage = "Opuszczanie zespołu jest możliwe tylko w trakcie aktywnej tury.";
                 return RedirectToPage();
             }
 
@@ -144,7 +144,7 @@ namespace PromotorSelection.Pages.Student
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Opuszczono zesp�.";
+                    SuccessMessage = "Opuszczono zespół.";
                     return RedirectToPage();
                 }
 
@@ -153,8 +153,8 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas opuszczania zespo�u.");
-                ErrorMessage = "Wyst�pi� b��d podczas opuszczania zespo�u.";
+                _logger.LogError(ex, "Błąd podczas opuszczania zespołu.");
+                ErrorMessage = "Wystąpił błąd podczas opuszczania zespołu.";
                 return RedirectToPage();
             }
         }
@@ -168,8 +168,8 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas pobierania zespo��w (api/Teams).");
-                ErrorMessage ??= "Nie uda�o si� pobra� listy zespo��w.";
+                _logger.LogError(ex, "Błąd podczas pobierania zespołów (api/Teams).");
+                ErrorMessage ??= "Nie udało się pobrać listy zespołów.";
             }
         }
 
@@ -182,7 +182,7 @@ namespace PromotorSelection.Pages.Student
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas pobierania statusu tury (api/Schedules).");
+                _logger.LogError(ex, "Błąd podczas pobierania statusu tury (api/Schedules).");
             }
         }
 

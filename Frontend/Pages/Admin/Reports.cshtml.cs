@@ -61,20 +61,20 @@ namespace PromotorSelection.Pages.Admin
             await LoadStatsAsync();
         }
 
-        // ===== Przydzia� =====
+        // ===== Przydział =====
         public async Task<IActionResult> OnPostRunAllocationAsync()
         {
             await LoadStatusAsync();
 
             if (!HasSchedule)
             {
-                ErrorMessage = "Nie mo�na uruchomi� przydzia�u: harmonogram nie jest ustawiony.";
+                ErrorMessage = "Nie można uruchomić przydziału: harmonogram nie jest ustawiony.";
                 return Page();
             }
 
             if (!CanRunAllocation)
             {
-                ErrorMessage = "Przydzia� mo�na uruchomi� dopiero po zako�czeniu terminu wybor�w.";
+                ErrorMessage = "Przydział można uruchomić dopiero po zakończeniu terminu wyborów.";
                 return Page();
             }
 
@@ -86,12 +86,12 @@ namespace PromotorSelection.Pages.Admin
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Uruchomiono przydzia�. Poni�ej statystyki oraz eksport PDF/XLSX.";
+                    SuccessMessage = "Uruchomiono przydział. Poniżej statystyki oraz eksport PDF/XLSX.";
 
                     // NOWE: po przydziale od razu pobierz statystyki
                     await LoadStatsAsync();
 
-                    // Zwracamy Page(), �eby od razu pokaza� sekcj� statystyk.
+                    // Zwracamy Page(), żeby od razu pokazać sekcję statystyk.
                     return Page();
                 }
 
@@ -100,8 +100,8 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas uruchamiania przydzia�u.");
-                ErrorMessage = "Wyst�pi� b��d podczas uruchamiania przydzia�u.";
+                _logger.LogError(ex, "Błąd podczas uruchamiania przydziału.");
+                ErrorMessage = "Wystąpił błąd podczas uruchamiania przydziału.";
                 return Page();
             }
         }
@@ -119,8 +119,8 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas pobierania raportu PDF.");
-                ErrorMessage = "Nie uda�o si� wygenerowa�/pobra� raportu PDF.";
+                _logger.LogError(ex, "Błąd podczas pobierania raportu PDF.");
+                ErrorMessage = "Nie udało się wygenerować/pobrać raportu PDF.";
                 return RedirectToPage();
             }
         }
@@ -141,8 +141,8 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas pobierania raportu Excel.");
-                ErrorMessage = "Nie uda�o si� wygenerowa�/pobra� raportu Excel.";
+                _logger.LogError(ex, "Błąd podczas pobierania raportu Excel.");
+                ErrorMessage = "Nie udało się wygenerować/pobrać raportu Excel.";
                 return RedirectToPage();
             }
         }
@@ -157,7 +157,7 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas pobierania statusu harmonogramu (api/Schedules).");
+                _logger.LogError(ex, "Błąd podczas pobierania statusu harmonogramu (api/Schedules).");
             }
         }
 
@@ -170,9 +170,9 @@ namespace PromotorSelection.Pages.Admin
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "B��d podczas pobierania statystyk (api/Statistics).");
-                // nie blokujemy strony, ale poka�emy alert
-                ErrorMessage ??= "Nie uda�o si� pobra� statystyk po przydziale.";
+                _logger.LogError(ex, "Błąd podczas pobierania statystyk (api/Statistics).");
+                // nie blokujemy strony, ale pokażemy alert
+                ErrorMessage ??= "Nie udało się pobrać statystyk po przydziale.";
             }
         }
 

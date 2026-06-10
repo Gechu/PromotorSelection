@@ -149,139 +149,113 @@
     Wyniki: <strong>@Model.FilteredCount</strong> / @Model.TotalCount
 </div>
 
-<style>
-    .sort-link {
-        color: inherit;
-        text-decoration: none;
-        font-weight: 600;
-    }
-
-        .sort-link:hover {
-            text-decoration: underline;
-        }
-
-    .sort-icon {
-        display: inline-block;
-        width: 1.2em;
-        text-align: center;
-        opacity: .7;
-        margin-left: .25rem;
-    }
-
-    tr.promotor-row {
-        cursor: pointer;
-    }
-
-        tr.promotor-row:hover {
-            background: rgba(0,0,0,.03);
-        }
-</style>
-
 @if (Model.Promotors.Count == 0)
 {
     <p>Brak promotorów do wyświetlenia.</p>
 }
 else
 {
-    <table class="table table-striped align-middle">
-        <thead>
-            <tr>
-                <th>UserId</th>
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>UserId</th>
 
-                <th>
-                    <a class="sort-link"
-                       asp-page="/Admin/Promotors"
-                       asp-route-Q="@Model.Q"
-                       asp-route-Sort="lastName"
-                       asp-route-Dir="@Model.NextDir("lastName")">
-                        Nazwisko <span class="sort-icon">@Model.SortIcon("lastName")</span>
-                    </a>
-                </th>
-
-                <th>Imię</th>
-                <th>Email</th>
-
-                <th class="text-end">
-                    <a class="sort-link"
-                       asp-page="/Admin/Promotors"
-                       asp-route-Q="@Model.Q"
-                       asp-route-Sort="limit"
-                       asp-route-Dir="@Model.NextDir("limit")">
-                        Limit <span class="sort-icon">@Model.SortIcon("limit")</span>
-                    </a>
-                </th>
-
-                <th>Tematy</th>
-                <th style="width: 260px;">Akcje</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            @foreach (var p in Model.Promotors)
-            {
-                var detailsId = $"topics-{p.UserId}";
-
-                <tr class="promotor-row" data-details="@detailsId">
-                    <td>@p.UserId</td>
-                    <td>@p.LastName</td>
-                    <td>@p.FirstName</td>
-                    <td>@p.Email</td>
-                    <td class="text-end">@p.StudentLimit</td>
-                    <td><span class="badge bg-secondary">Tematy: @p.Topics.Count</span></td>
-
-                    <td class="d-flex gap-2">
-                        <a class="btn btn-outline-primary btn-sm"
+                    <th>
+                        <a class="sort-link"
                            asp-page="/Admin/Promotors"
                            asp-route-Q="@Model.Q"
-                           asp-route-Sort="@Model.Sort"
-                           asp-route-Dir="@Model.Dir"
-                           asp-route-FormMode="edit"
-                           asp-route-Id="@p.UserId">
-                            Edytuj
+                           asp-route-Sort="lastName"
+                           asp-route-Dir="@Model.NextDir("lastName")">
+                            Nazwisko <span class="sort-icon">@Model.SortIcon("lastName")</span>
                         </a>
+                    </th>
 
-                        <form method="post" asp-page-handler="Delete"
-                              onsubmit="return confirm('Usunąć promotora (UserId: @p.UserId)? Operacja jest nieodwracalna.');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="Id" value="@p.UserId" />
-                            <input type="hidden" name="Q" value="@Model.Q" />
-                            <input type="hidden" name="Sort" value="@Model.Sort" />
-                            <input type="hidden" name="Dir" value="@Model.Dir" />
-                            <button type="submit" class="btn btn-outline-danger btn-sm">Usuń</button>
-                        </form>
-                    </td>
+                    <th>Imię</th>
+                    <th>Email</th>
+
+                    <th class="text-end">
+                        <a class="sort-link"
+                           asp-page="/Admin/Promotors"
+                           asp-route-Q="@Model.Q"
+                           asp-route-Sort="limit"
+                           asp-route-Dir="@Model.NextDir("limit")">
+                            Limit <span class="sort-icon">@Model.SortIcon("limit")</span>
+                        </a>
+                    </th>
+
+                    <th>Tematy</th>
+                    <th style="width: 260px;">Akcje</th>
                 </tr>
+            </thead>
 
-                <tr id="@detailsId" class="d-none">
-                    <td colspan="7">
-                        <div class="p-3 border rounded bg-light">
-                            <div class="fw-semibold mb-2">Tematy promotora</div>
+            <tbody>
+                @foreach (var p in Model.Promotors)
+                {
+                    var detailsId = $"topics-{p.UserId}";
 
-                            @if (p.Topics.Count == 0)
-                            {
-                                <div class="text-muted">Brak tematów.</div>
-                            }
-                            else
-                            {
-                                <ul class="mb-0">
-                                    @foreach (var t in p.Topics)
-                                    {
-                                        <li class="mb-2">
-                                            <div class="fw-semibold">@t.Title</div>
-                                            @if (!string.IsNullOrWhiteSpace(t.Description))
-                                            {
-                                                <div class="text-muted">@t.Description</div>
-                                            }
-                                        </li>
-                                    }
-                                </ul>
-                            }
-                        </div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    <tr class="promotor-row" data-details="@detailsId">
+                        <td>@p.UserId</td>
+                        <td>@p.LastName</td>
+                        <td>@p.FirstName</td>
+                        <td>@p.Email</td>
+                        <td class="text-end">@p.StudentLimit</td>
+                        <td><span class="badge bg-secondary">Tematy: @p.Topics.Count</span></td>
+
+                        <td class="d-flex gap-2">
+                            <a class="btn btn-outline-primary btn-sm"
+                               asp-page="/Admin/Promotors"
+                               asp-route-Q="@Model.Q"
+                               asp-route-Sort="@Model.Sort"
+                               asp-route-Dir="@Model.Dir"
+                               asp-route-FormMode="edit"
+                               asp-route-Id="@p.UserId">
+                                Edytuj
+                            </a>
+
+                            <form method="post" asp-page-handler="Delete"
+                                  onsubmit="return confirm('Usunąć promotora (UserId: @p.UserId)? Operacja jest nieodwracalna.');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Id" value="@p.UserId" />
+                                <input type="hidden" name="Q" value="@Model.Q" />
+                                <input type="hidden" name="Sort" value="@Model.Sort" />
+                                <input type="hidden" name="Dir" value="@Model.Dir" />
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Usuń</button>
+                            </form>
+                        </td>
+                    </tr>
+
+                    <tr id="@detailsId" class="d-none">
+                        <td colspan="7">
+                            <div class="p-3 border rounded bg-light">
+                                <div class="fw-semibold mb-2">Tematy promotora</div>
+
+                                @if (p.Topics.Count == 0)
+                                {
+                                    <div class="text-muted">Brak tematów.</div>
+                                }
+                                else
+                                {
+                                    <ul class="mb-0">
+                                        @foreach (var t in p.Topics)
+                                        {
+                                            <li class="mb-2">
+                                                <div class="fw-semibold">@t.Title</div>
+                                                @if (!string.IsNullOrWhiteSpace(t.Description))
+                                                {
+                                                    <div class="text-muted">@t.Description</div>
+                                                }
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 <script>
