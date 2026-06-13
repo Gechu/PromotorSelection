@@ -42,10 +42,6 @@
                                 <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "active-nav" : "")" asp-page="/Index">Home</a>
                             }
                         </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Privacy" ? "active-nav" : "")" asp-page="/Privacy">Privacy</a>
-                        </li>
                     </ul>
 
                     @if (User.Identity?.IsAuthenticated ?? false)
@@ -66,7 +62,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container-lg">
-            &copy; 2026 - PromotorSelection - <a asp-page="/Privacy">Privacy</a>
+            &copy; 2026 - PromotorSelection
         </div>
     </footer>
 
